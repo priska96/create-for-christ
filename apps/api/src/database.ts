@@ -6,8 +6,8 @@ export interface Database {
   listCampaigns(dealType?: DealType): Promise<Campaign[]>;
   close(): Promise<void>;
 }
-export function createDatabase(connectionString: string): Database {
-  const pool = new pg.Pool({ connectionString, max: 5, connectionTimeoutMillis: 3000, statement_timeout: 5000 });
+export function createDatabase(connectionString: string, sharedPool?: pg.Pool): Database {
+  const pool = sharedPool ?? new pg.Pool({ connectionString, max: 5, connectionTimeoutMillis: 3000, statement_timeout: 5000 });
   pool.on('error', () => console.error('An idle database connection failed.'));
   return {
     async ping() { await pool.query('SELECT 1'); },

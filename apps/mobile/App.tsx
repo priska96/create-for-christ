@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { router } from 'expo-router';
+import { authClient } from './src/auth-client';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -8,8 +10,11 @@ import { getCampaigns } from './src/api';
 type Role = 'creator' | 'brand';
 const filters = [{ value: 'all', label: 'Alle Deals' }, { value: 'barter', label: 'Barter' }, { value: 'paid', label: 'Paid' }] as const;
 
-export default function App() {
-  const [role, setRole] = useState<Role>('creator');
+export default function App({initialRole='creator',authenticated=false}: {initialRole?:Role;authenticated?:boolean}) {
+  const [role, setRole] = useState<Role>(initialRole);
+  const [accountError,setAccountError] = useState('');
+  const [signingOut,setSigningOut] = useState(false);
+  async function logout(){setSigningOut(true);setAccountError('');try{const result=await authClient.signOut();if(result.error){setAccountError('Abmelden fehlgeschlagen. Bitte erneut versuchen.');return;}router.replace('/');}catch{setAccountError('Keine Verbindung. Bitte erneut versuchen.');}finally{setSigningOut(false);}}
   const [filter, setFilter] = useState<DealType | 'all'>('all');
   const [reload, setReload] = useState(0);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -34,16 +39,21 @@ export default function App() {
           <View style={styles.header}>
             <View style={styles.mark}><Text style={styles.markText}>cfc.</Text></View>
             <View><Text style={styles.wordmark}>Create For Christ</Text><Text style={styles.small}>CREATORS × BRANDS</Text></View>
-            <View style={styles.preview}><Text style={styles.previewText}>VORSCHAU</Text></View>
+            <View style={styles.preview}><Text style={styles.previewText}>{authenticated?'MEIN KONTO':'ENTDECKEN'}</Text></View>
           </View>
 
-          <View style={styles.roles}>
+          <View style={styles.tags}>
+            <Pressable accessibilityRole="button" onPress={()=>router.push(authenticated?'/profile':'/sign-up')} style={styles.button}><Text style={styles.buttonText}>{authenticated?'Profil bearbeiten':'Konto erstellen'}</Text></Pressable>
+            <Pressable accessibilityRole="button" disabled={signingOut} onPress={()=>authenticated?void logout():router.push('/sign-in')} style={styles.filter}><Text style={styles.filterText}>{authenticated?(signingOut?'Abmelden …':'Abmelden'):'Anmelden'}</Text></Pressable>
+          </View>
+          {accountError ? <Text accessibilityRole="alert" style={styles.note}>{accountError}</Text> : null}
+          {!authenticated && <View style={styles.roles}>
             {(['creator', 'brand'] as const).map(value => (
               <Pressable key={value} accessibilityRole="tab" accessibilityState={{ selected: role === value }} onPress={() => setRole(value)} style={[styles.role, role === value && styles.roleActive]}>
                 <Text style={[styles.roleText, role === value && styles.roleTextActive]}>{value === 'creator' ? 'Für Creator' : 'Für Brands'}</Text>
               </Pressable>
             ))}
-          </View>
+          </View>}
 
           <View style={styles.hero}>
             <Text style={styles.eyebrow}>DEINE IDEEN. ECHTE VERBINDUNGEN.</Text>
@@ -73,10 +83,10 @@ export default function App() {
                 <Text style={styles.emptyTitle}>{campaign.title}</Text><Text style={styles.body}>{campaign.description}</Text>
                 <Text style={styles.price}>{campaign.compensation.type === 'paid' ? `${(campaign.compensation.amountPerReelMinor / 100).toFixed(2)} ${campaign.currency} pro Reel` : `${campaign.productName} als Gegenleistung`}</Text>
                 <Text style={styles.small}>{campaign.reelCount} Reel(s) · Veröffentlichung auf Instagram</Text>
-                <Text style={styles.note}>Bewerbungen werden mit der Registrierung freigeschaltet. In dieser Vorschau kannst du Kampagnen ansehen.</Text>
+                <Text style={styles.note}>Bewerbungen und Swipes folgen im nächsten Entwicklungsschritt. Du kannst die Kampagnen bereits ansehen.</Text>
               </View>
             ))}
-          </> : <View style={styles.empty}><Text style={styles.emptySymbol}>↗</Text><Text style={styles.emptyTitle}>Platz für deine nächste Kampagne.</Text><Text style={styles.body}>Hier wirst du dein Brand-Profil erstellen, Reel-Kampagnen veröffentlichen und Bewerbungen verwalten.</Text><Text style={styles.note}>Die Brand-Verwaltung ist noch in Entwicklung.</Text></View>}
+          </> : <View style={styles.empty}><Text style={styles.emptySymbol}>↗</Text><Text style={styles.emptyTitle}>Platz für deine nächste Kampagne.</Text><Text style={styles.body}>Hier wirst du Reel-Kampagnen veröffentlichen und Bewerbungen verwalten. Dein Brand-Profil kannst du bereits oben bearbeiten.</Text><Text style={styles.note}>Die Brand-Verwaltung ist noch in Entwicklung.</Text></View>}
 
           <View style={styles.how}><Text style={styles.sectionTitle}>So kommen wir zusammen.</Text>
             {[['01', 'Entdecken', 'Die passende Brand und das passende Produkt finden.'], ['02', 'Verbinden', 'Bewerben und nach der Zusage gemeinsam loslegen.'], ['03', 'Kreieren', 'Dein Reel posten und den Instagram-Link einreichen.']].map(([number, title, body]) => <View key={number} style={styles.step}><Text style={styles.stepNumber}>{number}</Text><View style={styles.stepContent}><Text style={styles.stepTitle}>{title}</Text><Text style={styles.body}>{body}</Text></View></View>)}

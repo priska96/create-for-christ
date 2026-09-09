@@ -9,4 +9,6 @@
 - Keep auth-provider identities separate from stable profile IDs. Store money in integer minor units with a currency.
 - Only reels are supported. Barter and paid are campaign-level compensation types.
 - Persist schema changes as new SQL migrations. Do not edit applied migrations.
-- The app is currently a scaffold. Do not present unfinished authentication, swiping or matching as working features.
+- Accounts and own-profile onboarding/editing are implemented with Better Auth. Swiping and matching are not implemented yet.
+- Run npm run test:integration with local PostgreSQL for auth/profile changes. These tests use a temporary schema; never point tests at production.
+- Local auth emails go to Mailpit. Never expose auth tables or mail outbox contents through public APIs.

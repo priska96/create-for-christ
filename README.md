@@ -16,19 +16,18 @@ Voraussetzungen: Node.js laut `.nvmrc`, npm und laufendes Docker Desktop.
 ```sh
 nvm use
 npm install
-cp .env.example .env
-cp apps/api/.env.example apps/api/.env
-cp apps/mobile/.env.example apps/mobile/.env
+npm run setup
 npm run db:up
 npm run db:migrate
 npm run dev
 ```
 
-Die `.env`-Dateien sind bei der Ersteinrichtung bereits lokal angelegt. Die Kopierbefehle sind für einen frischen Checkout gedacht; vorhandene eigene Werte nicht überschreiben. Die enthaltenen Datenbank-Zugangsdaten sind ausschließlich für lokale Entwicklung.
+Die `.env`-Dateien sind lokal bereits angelegt. `npm run setup` erstellt fehlende Dateien, erzeugt ein zufälliges Auth-Secret und behält vorhandene Konfigurationen bei. Die enthaltenen Datenbank-Zugangsdaten sind ausschließlich für lokale Entwicklung.
 
 - API: `http://localhost:3001`
 - `/health`: Prozess lebt, unabhängig von der Datenbank
 - `/ready`: Datenbank erreichbar
+- Mailpit-Testpostfach: `http://localhost:8025` (lokale Bestätigungs- und Reset-Mails; kein externer Versand)
 - `/v1/campaigns`: bis zu 20 veröffentlichte Kampagnen, optional `?dealType=barter` oder `?dealType=paid`
 - Mobile: QR-Code im Expo-Terminal; alternativ `npm run dev:web` für den Browser (API separat mit `npm run dev:api` starten).
 
@@ -71,18 +70,41 @@ Nach Änderungen an `packages/contracts` dessen Build neu starten; die gemeinsam
 
 ## Aktueller Umfang
 
-Startfähige Projektgrundlage mit Creator-/Brand-Vorschau, Barter-/Paid-Filter, echten API-Anfragen und Lade-, Leer- und Fehlerzuständen. Es werden keine Beispielkampagnen als echte Angebote ausgegeben. Die Datenbank beginnt leer.
+- Registrierung mit Name, E-Mail und Passwort; E-Mail-Bestätigung ist vor dem Login erforderlich.
+- Login, persistente Sitzungen und Logout mit serverseitigem Widerruf.
+- Passwort vergessen, Browserformular zum Zurücksetzen und Widerruf bestehender Sitzungen nach erfolgreichem Reset.
+- Einmaliges Onboarding als Creator oder Brand. Die Rolle kann über Profiländerungen nicht gewechselt werden.
+- Creator-Profil mit Instagram-Nutzername, Vorstellung, Standort, Sprachen, Themen, Deal-Präferenzen und optionalen Reel-Links.
+- Brand-Profil mit Ansprechpartner, Brand-Name, Beschreibung, Website, Branche und Standort.
+- Eigene Profile laden und bearbeiten; IDs werden ausschließlich aus der geprüften Sitzung abgeleitet.
+- Öffentliche Kampagnenübersicht mit Barter-/Paid-Filtern.
 
-Registrierung, Login, Profile bearbeiten, Kampagnen veröffentlichen, Swipe-Bewerbungen, Matches, Chat, Versand und Reel-Abnahme sind noch nicht implementiert. Die Rollenwahl in der Vorschau ist keine Anmeldung oder Berechtigung. Es gibt bewusst keine offenen Schreib-Endpunkte. Das Schema ist eine erste Grundlage und wird mit den Features erweitert, insbesondere um versionierte Vereinbarungen, private Lieferdaten und Benachrichtigungsaufträge.
+Kampagnenverwaltung, Bewerbungs-Swipes, Matches, Chat, Versand und Reel-Abnahme sind weiterhin nicht implementiert. Profilbilder/Logos und automatische Instagram-Verifizierung folgen separat; der angegebene öffentliche Kanal wird noch nicht automatisch geprüft.
+
+## Authentifizierung lokal testen
+
+Nach dem Update `npm run setup`, `npm run db:up`, `npm run db:migrate` ausführen und den Dev-Server neu starten.
+
+1. In der App „Konto erstellen“ wählen und registrieren. Passwörter haben 10–128 Zeichen.
+2. Das lokale Testpostfach unter `http://localhost:8025` öffnen und auf den Bestätigungslink klicken.
+3. Zur App zurückkehren, anmelden und das Creator- oder Brand-Profil ausfüllen.
+4. Zum Testen der anderen Rolle abmelden und einen zweiten Account registrieren.
+5. „Passwort vergessen?“ testen. Der E-Mail-Link öffnet ein Browserformular; nach erfolgreichem Reset erneut anmelden.
+
+Für Smartphone-Tests müssen `AUTH_BASE_URL` in `apps/api/.env` und `EXPO_PUBLIC_API_URL` in `apps/mobile/.env` dieselbe erreichbare API-Adresse verwenden (z. B. die LAN-IP des Rechners mit Port 3001). `CORS_ORIGINS` enthält die tatsächlich verwendeten Web-Ursprünge, durch Komma getrennt. Nach Änderungen Server und Expo neu starten. Native Sitzungs-Cookies werden mit Expo SecureStore gespeichert, im Browser als HttpOnly-Cookies. Auf einem bestehenden Development Build ist wegen neuer nativer Pakete ggf. ein neuer Build nötig.
+
+Better Auth verwaltet eigene Tabellen; `auth_identities` verknüpft dessen Benutzer mit stabilen Profil-IDs. Ein späterer Datenbank-/Auth-Wechsel bleibt getrennt planbar. Auth-Mails werden dauerhaft in `auth_mail_outbox` vorgemerkt, im Hintergrund an SMTP übergeben und nach Erfolg gelöscht. Fehlgeschlagene Zustellungen werden begrenzt wiederholt; nach einer Stunde werden verbleibende Inhalte entfernt. SMTP-Ausfälle werden ohne Empfänger oder Token geloggt. Das lokale Mailpit hat keine externen Empfänger.
+
+`npm run test:integration` prüft den Auth-Lebenszyklus gegen ein zufälliges, isoliertes PostgreSQL-Testschema, das danach gelöscht wird. Dafür muss die lokale Datenbank laufen; der Test-Benutzer benötigt Rechte zum Erstellen eines Schemas. Die Tests ändern keine bestehenden Nutzerprofile und versenden keine echten E-Mails.
 
 ## Vor einem öffentlichen Pilot
 
-Eine Auth-Lösung integrieren; Berechtigungen pro API-Aktion prüfen; atomare Bewerbungsannahme und Platzvergabe implementieren; HTTPS und E-Mail-Versand einrichten. Für den Server einen eingeschränkten Datenbankbenutzer verwenden, statt des lokalen Docker-Administrators. Datenbank und Dateien extern sichern und Wiederherstellung prüfen. Das Compose-Setup ist für lokale Entwicklung, keine fertige Produktionsbereitstellung.
+Atomare Bewerbungsannahme und Platzvergabe implementieren; HTTPS und einen echten SMTP-Anbieter mit passendem Absender einrichten. Die lokalen Mailpit-Ports nicht öffentlich freigeben. Für einen Reverse Proxy müssen dessen vertrauenswürdige Adressen gezielt konfiguriert werden, damit die IP-basierten Limits korrekt greifen. Bei mehreren API-Instanzen einen gemeinsamen Rate-Limit-Speicher einrichten. Für den Server einen eingeschränkten Datenbankbenutzer verwenden, statt des lokalen Docker-Administrators. Datenbank und Dateien extern sichern und Wiederherstellung prüfen. Das Compose-Setup ist für lokale Entwicklung, keine fertige Produktionsbereitstellung.
 
 Paketname und URL-Slug: `create-for-christ`. Anzeigename: **Create For Christ**. Die technischen App-IDs `app.createforchrist.mobile` sind vor der Store-Veröffentlichung mit der tatsächlichen Organisation abzugleichen.
 
 ## Prüfstand und bekannte Einschränkungen
 
-Typechecks, API-Tests und Backend-Build wurden erfolgreich ausgeführt. Expo-Bundles für iOS, Android und Web wurden erfolgreich exportiert; ein nativer Simulator-/Gerätetest ist noch nicht erfolgt. Die SQL-Migration wurde auf PostgreSQL 17 angewendet und ihre Wiederholbarkeit geprüft.
+Typechecks, API-Tests und Backend-Build wurden erfolgreich ausgeführt. Die Auth-Integrationstests prüfen unbestätigte Accounts, idempotentes Onboarding, fremde Profil-IDs, Rollenwechsel, CSRF, Logout und einmalige Passwort-Resets mit Sitzungswiderruf. Expo-Bundles für iOS, Android und Web wurden erfolgreich exportiert; ein nativer Simulator-/Gerätetest ist noch nicht erfolgt. Die SQL-Migration wurde auf PostgreSQL 17 angewendet und ihre Wiederholbarkeit geprüft.
 
 Beim initialen npm audit wurden 13 moderate Meldungen innerhalb der Expo-Abhängigkeitsketten ausgewiesen, insbesondere uuid über xcode sowie decode-uri-component über query-string/Expo Router. Keine hohen oder kritischen Meldungen in diesem Prüfstand. Die vorgeschlagenen automatischen Major-Downgrades wurden nicht angewendet, da sie nicht zur gewählten Expo-Version passen. Vor Veröffentlichung erneut prüfen und kompatible Upstream-Korrekturen einspielen.

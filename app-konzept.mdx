@@ -8,7 +8,7 @@ App-Name: **Create For Christ**. Projektordner und Slug: `create-for-christ`.
 
 Gewählt ist eine eigene kleine Node.js-/TypeScript-API mit PostgreSQL und einer Expo-App. Supabase Self-Hosted und PocketBase werden nicht für die erste Implementierung eingesetzt. Ein späterer schrittweiser Wechsel zu Supabase bleibt möglich. Frühere Architekturvorschläge weiter unten dokumentieren den Entscheidungsverlauf und werden durch diesen Abschnitt ersetzt.
 
-Die Projektgrundlage verwendet npm Workspaces, Fastify, gemeinsame Zod-API-Verträge, versionierte SQL-Migrationen und PostgreSQL per Docker Compose. Eine Expo-Vorschau zeigt Creator-/Brand-Einstieg und liest veröffentlichte Kampagnen über die API. Authentifizierung und die fachlichen Schreibfunktionen sind noch zu implementieren; die Rollenwahl der Vorschau ist keine Anmeldung. Die stabilen Profil-IDs sind von künftigen Auth-Anbietern getrennt.
+Die Projektgrundlage verwendet npm Workspaces, Fastify, gemeinsame Zod-API-Verträge, versionierte SQL-Migrationen und PostgreSQL per Docker Compose. Die Expo-App bietet Registrierung, E-Mail-Bestätigung, Login/Logout, Passwort-Reset sowie einmaliges Onboarding und Bearbeitung eigener Creator-/Brand-Profile. Better Auth übernimmt die Authentifizierung; eigene Profil-Endpunkte prüfen die Sitzung und Eigentümerschaft serverseitig. Die Vorschau-Rollenwahl bleibt vom tatsächlichen Account getrennt. Kampagnenverwaltung und Bewerbungs-/Matching-Funktionen folgen als nächster Meilenstein. Die stabilen Profil-IDs sind von künftigen Auth-Anbietern getrennt.
 
 
 Dieses Dokument hält den bisherigen Brainstorming-Stand fest. Bestätigte Anforderungen sind von Vorschlägen und offenen Entscheidungen getrennt. Der App-Name wurde inzwischen als Create For Christ festgelegt.
@@ -333,3 +333,12 @@ Die offizielle Docker-Anleitung nennt für alle Komponenten mindestens 4 GB RAM,
 Self-Hosting spart das Cloud-Abonnement und Entwicklungsarbeit für Basisfunktionen, verlangt aber eigene Updates, HTTPS-Konfiguration, Monitoring und getrennte Sicherung von Datenbank und Dateien mit Wiederherstellungstest. Es ist nicht pauschal billiger als Managed Hosting, wenn Wartungszeit mitgerechnet wird.
 
 Quelle: [Supabase Docker und Ressourcenanforderungen](https://supabase.com/docs/guides/self-hosting/docker).
+
+
+## Implementierter Meilenstein: Accounts und Profile
+
+Better Auth mit PostgreSQL verwaltet Benutzer, Passwort-Hashes, Sitzungen und Bestätigungen. Verifizierte Accounts richten ein Creator- oder Brand-Profil ein; diese Rolle bleibt beim Bearbeiten unverändert. Profile sind über getrennte Auth-Identitäten an stabile IDs gekoppelt. Profil-Endpunkte akzeptieren keine fremden Profil- oder Brand-IDs. Gleichzeitige Onboarding-Anfragen werden je Account serialisiert.
+
+Creator geben Name, Instagram-Nutzername, Vorstellung, Sprachen, Themen, Standort, Deal-Präferenzen und bis zu fünf Instagram-Reel-Links an. Brands geben Ansprechpartner, Brand-Name, Beschreibung, Website, Branche und Standort an. Fotos/Logos und Reichweitenfelder sind noch nicht Bestandteil dieses Meilensteins.
+
+Bestätigungs- und Reset-Links sind eine Stunde gültig. Reset-Links sind nur einmal verwendbar; erfolgreiche Passwortänderung widerruft vorhandene Sitzungen. Die lokale Mailzustellung erfolgt über eine Datenbank-Outbox an Mailpit, ohne externe E-Mails. Für Produktion wird ein eigener SMTP-Anbieter konfiguriert. Native Sitzungen liegen in Expo SecureStore, Browser-Sitzungen in HttpOnly-Cookies.
