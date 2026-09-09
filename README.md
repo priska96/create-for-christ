@@ -80,3 +80,9 @@ Registrierung, Login, Profile bearbeiten, Kampagnen veröffentlichen, Swipe-Bewe
 Eine Auth-Lösung integrieren; Berechtigungen pro API-Aktion prüfen; atomare Bewerbungsannahme und Platzvergabe implementieren; HTTPS und E-Mail-Versand einrichten. Für den Server einen eingeschränkten Datenbankbenutzer verwenden, statt des lokalen Docker-Administrators. Datenbank und Dateien extern sichern und Wiederherstellung prüfen. Das Compose-Setup ist für lokale Entwicklung, keine fertige Produktionsbereitstellung.
 
 Paketname und URL-Slug: `create-for-christ`. Anzeigename: **Create For Christ**. Die technischen App-IDs `app.createforchrist.mobile` sind vor der Store-Veröffentlichung mit der tatsächlichen Organisation abzugleichen.
+
+## Prüfstand und bekannte Einschränkungen
+
+Typechecks, API-Tests und Backend-Build wurden erfolgreich ausgeführt. Expo-Bundles für iOS, Android und Web wurden erfolgreich exportiert; ein nativer Simulator-/Gerätetest ist noch nicht erfolgt. Die SQL-Migration wurde auf PostgreSQL 17 angewendet und ihre Wiederholbarkeit geprüft.
+
+Beim initialen npm audit wurden 13 moderate Meldungen innerhalb der Expo-Abhängigkeitsketten ausgewiesen, insbesondere uuid über xcode sowie decode-uri-component über query-string/Expo Router. Keine hohen oder kritischen Meldungen in diesem Prüfstand. Die vorgeschlagenen automatischen Major-Downgrades wurden nicht angewendet, da sie nicht zur gewählten Expo-Version passen. Vor Veröffentlichung erneut prüfen und kompatible Upstream-Korrekturen einspielen.
