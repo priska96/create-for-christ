@@ -1,0 +1,29 @@
+{
+  "name": "create-for-christ",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22.22.2 <25"
+  },
+  "scripts": {
+    "dev": "npm run build -w @create-for-christ/contracts && concurrently --kill-others -n api,mobile \"npm run dev -w @create-for-christ/api\" \"npm run start -w @create-for-christ/mobile\"",
+    "dev:api": "npm run build -w @create-for-christ/contracts && npm run dev -w @create-for-christ/api",
+    "dev:mobile": "npm run build -w @create-for-christ/contracts && npm run start -w @create-for-christ/mobile",
+    "dev:web": "npm run build -w @create-for-christ/contracts && npm run web -w @create-for-christ/mobile",
+    "db:up": "docker compose up -d --wait db",
+    "db:down": "docker compose down",
+    "db:migrate": "npm run db:migrate -w @create-for-christ/api",
+    "build": "npm run build -w @create-for-christ/contracts && npm run build -w @create-for-christ/api",
+    "typecheck": "npm run build -w @create-for-christ/contracts && npm run typecheck --workspaces --if-present",
+    "test": "npm run build -w @create-for-christ/contracts && npm run test -w @create-for-christ/api",
+    "check": "npm run typecheck && npm test && npm run build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "typescript": "~6.0.3"
+  }
+}

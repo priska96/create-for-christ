@@ -1,0 +1,335 @@
+# Create For Christ – App-Konzept
+
+Stand: 9. September 2026
+
+## Verbindlicher aktueller Stand
+
+App-Name: **Create For Christ**. Projektordner und Slug: `create-for-christ`.
+
+Gewählt ist eine eigene kleine Node.js-/TypeScript-API mit PostgreSQL und einer Expo-App. Supabase Self-Hosted und PocketBase werden nicht für die erste Implementierung eingesetzt. Ein späterer schrittweiser Wechsel zu Supabase bleibt möglich. Frühere Architekturvorschläge weiter unten dokumentieren den Entscheidungsverlauf und werden durch diesen Abschnitt ersetzt.
+
+Die Projektgrundlage verwendet npm Workspaces, Fastify, gemeinsame Zod-API-Verträge, versionierte SQL-Migrationen und PostgreSQL per Docker Compose. Eine Expo-Vorschau zeigt Creator-/Brand-Einstieg und liest veröffentlichte Kampagnen über die API. Authentifizierung und die fachlichen Schreibfunktionen sind noch zu implementieren; die Rollenwahl der Vorschau ist keine Anmeldung. Die stabilen Profil-IDs sind von künftigen Auth-Anbietern getrennt.
+
+
+Dieses Dokument hält den bisherigen Brainstorming-Stand fest. Bestätigte Anforderungen sind von Vorschlägen und offenen Entscheidungen getrennt. Der App-Name wurde inzwischen als Create For Christ festgelegt.
+
+## Bestätigte Anforderungen
+
+### Idee und Plattform
+
+Die App soll mit Expo umgesetzt werden. Sie verbindet UGC-Creator und Unternehmen beziehungsweise Brands über einen Swipe-Mechanismus ähnlich wie bei Tinder.
+
+Creator und Brands können eigene Profile erstellen. Beide Rollen geben unterschiedliche Informationen an.
+
+Creator swipen nach rechts, wenn sie sich für eine Brand und das zu bewerbende Produkt bewerben möchten. Ein Swipe nach links bedeutet „nicht interessiert“. Brands können eingegangene Bewerbungsanfragen annehmen oder ablehnen.
+
+### Ausschließlich Reels
+
+Die App spezialisiert sich ausschließlich auf Reels. Fotos und andere Content-Formate sind nicht Teil des Angebots. Portfolios, Briefings und Leistungen sollen entsprechend auf Reels ausgerichtet sein.
+
+Für den Start veröffentlichen Creator die Reels auf ihrem eigenen Instagram-Kanal. Als Nachweis reichen sie den Beitragslink ein. Eine Lieferung von Videodateien an Brands ist eine mögliche spätere Erweiterung.
+
+### Zwei Vergütungsmodelle
+
+| Modell | Gegenleistung | Beschreibung |
+| --- | --- | --- |
+| Barter-Deal | Produkt gegen Reel | Der Creator erhält das zu bewerbende Produkt als Bezahlung. |
+| Paid-Deal | Geldbetrag pro Reel | Der Creator wird pro Reel bezahlt. |
+
+Barter-Deals sollen insbesondere auch kleinen Brands, die noch keine Einnahmen erzielen, einen Einstieg in Kooperationen ermöglichen. Für Creator und Unternehmen kann die Zusammenarbeit auf Produktbasis ein Einstieg sein.
+
+## Vorgeschlagene Produktgestaltung
+
+Die folgenden Details wurden im Brainstorming vorgeschlagen und sind noch nicht als endgültiger Funktionsumfang bestätigt.
+
+### Kampagnen als Grundlage für Swipes
+
+Creator entdecken konkrete Kampagnen einer Brand. Eine Brand kann mehrere Kampagnen für unterschiedliche Produkte veröffentlichen. So sind Produkt, erwartete Leistung und Gegenleistung bereits vor der Bewerbung sichtbar.
+
+Die Deal-Art wird pro Kampagne festgelegt. Eine Brand kann dadurch sowohl Barter- als auch Paid-Kampagnen anbieten.
+
+### Creator-Profil
+
+- Name, Profilfoto und Kurzvorstellung
+- Standort und Sprachen
+- Themenbereiche, beispielsweise Beauty, Fitness oder Food
+- Portfolio mit Beispiel-Reels
+- Öffentlicher Instagram-Account
+- Followerzahl und typische Reel-Aufrufe, zunächst als manuelle, nicht verifizierte Angaben
+- Bevorzugte Deal-Arten: Barter, Paid oder beides
+- Preisvorstellung pro Reel, optional
+- Verfügbarkeit
+
+Das Portfolio und die Qualität der Reels sollen im Vordergrund stehen. Da Creator auf ihren eigenen Kanälen veröffentlichen, sind auch Reichweite und Zielgruppe relevant.
+
+### Brand-Profil
+
+- Firmenname, Logo und Beschreibung
+- Standort, Website und Branche
+- Produkte und Zielgruppen
+- Ansprechpartner
+- Rechnungs- und Unternehmensdaten als private Angaben
+- Verifizierung der Firma als mögliche Vertrauensfunktion
+
+### Kampagnenangaben
+
+- Brand und zu bewerbendes Produkt mit Produktdarstellung
+- Deal-Art: Barter oder Paid
+- Briefing mit Idee, Botschaft und Anforderungen
+- Gewünschte Anzahl und Länge der Reels
+- Anforderungen an Creator, beispielsweise Sprache, Themengebiet, Standort oder Erfahrung
+- Anzahl gesuchter Creator
+- Bewerbungsschluss und Abgabetermin
+- Enthaltene Korrekturrunden
+- Organisation des Produktversands
+- Nutzungsrechte: Kanäle, Dauer und Verwendung als bezahlte Werbung
+- Veröffentlichung auf dem eigenen Instagram-Kanal des Creators
+- Erforderliche Brand-Markierung und vereinbarte Mindestdauer der Veröffentlichung
+
+Bei Barter-Kampagnen werden das Produkt und der von der Brand angegebene Produktwert angezeigt. Versandkosten und die Bedingungen der Produktüberlassung sollen ausdrücklich festgehalten werden. Das Produkt ist die vereinbarte Vergütung.
+
+Bei Paid-Kampagnen wird das Honorar pro Reel angezeigt. Noch zu klären ist, ob zum Start feste Honorare, Preisspannen oder individuelle Preisangebote unterstützt werden. Außerdem muss klar sein, ob das Produkt zusätzlich kostenlos bereitgestellt oder ausgeliehen wird.
+
+### Swipe-Feed und Bewerbung
+
+Auf jeder Karte sind Produkt, Brand, wichtigste Anforderungen und die Kennzeichnung „Barter“ oder „Paid“ direkt sichtbar. Barter zeigt den angegebenen Produktwert, Paid das Geldhonorar pro Reel. Produktwert und Geldhonorar werden klar unterschieden.
+
+Creator können nach Barter, Paid oder beiden Deal-Arten filtern. Weitere grundlegende Filter können Themenbereich, Sprache und Standort berücksichtigen.
+
+Ein Swipe nach links bedeutet „nicht interessiert“. Ein Swipe nach rechts leitet eine Bewerbung ein.
+
+Vorschlag: Nach dem Rechts-Swipe erscheint eine kompakte Bestätigung mit optionaler persönlicher Nachricht. Ob der Swipe die Bewerbung stattdessen sofort absendet und ob ein Preisangebot möglich ist, bleibt offen.
+
+### Ablauf für Creator
+
+1. Registrieren und Creator-Profil erstellen.
+2. Reel-Referenzen verlinken und Interessen sowie Deal-Präferenzen einstellen.
+3. Kampagnen im Swipe-Feed entdecken.
+4. Bei Interesse nach rechts swipen und die Bewerbung gegebenenfalls bestätigen.
+5. Bewerbungsstatus verfolgen: offen, angenommen oder abgelehnt.
+6. Nach Annahme im Chat die Zusammenarbeit abstimmen.
+
+### Ablauf für Brands
+
+1. Registrieren und Brand-Profil erstellen.
+2. Kampagne mit Produkt, Briefing und Vergütung veröffentlichen.
+3. Bewerbungen je Kampagne ansehen.
+4. Creator anhand von Profil, Reel-Portfolio und Bewerbung vergleichen.
+5. Bewerbungen annehmen oder ablehnen.
+6. Nach Annahme im Chat die Zusammenarbeit abstimmen.
+
+Als Oberfläche für Bewerbungen wurden sowohl Karten als auch eine übersichtliche Liste vorgeschlagen. Die Liste erleichtert die Verwaltung vieler Bewerbungen und mehrerer Kampagnen.
+
+### Match und Auftrag
+
+Vorschlag: Eine Bewerbung ist zunächst eine Anfrage. Erst die Annahme durch die Brand erzeugt ein Match und öffnet den Chat.
+
+Ein Match dient zunächst der Kontaktaufnahme. Vor Auftragsbeginn bestätigen beide Seiten Vergütung beziehungsweise Produkt als Gegenleistung, Reel-Leistungen, Nutzungsrechte und Termin.
+
+Ein möglicher späterer Projektablauf lautet:
+
+Match → Auftrag bestätigt → Produkt versendet → Reel eingereicht → Freigabe → Abgeschlossen
+
+## Vorgeschlagener MVP
+
+- Registrierung mit den Rollen Creator und Brand
+- Unterschiedliche Profile und verlinkte Reel-Portfolios
+- Kampagnen erstellen und bearbeiten
+- Barter- und Paid-Kampagnen mit klarer Vergütungsdarstellung
+- Swipe-Feed mit grundlegenden Filtern
+- Bewerbungen und Statusübersicht
+- Bewerbungen durch Brands annehmen oder ablehnen
+- Chat nach einem Match
+- Push-Benachrichtigungen
+- Melden und Blockieren
+- Einfache Admin-Verwaltung
+
+Der vorgeschlagene MVP konzentriert sich auf das Anbahnen von Kooperationen. Der genaue Umfang ist noch abzustimmen.
+
+## Mögliche spätere Erweiterungen
+
+- Zahlungsabwicklung innerhalb der App
+- Bewertungen nach abgeschlossenen Kooperationen
+- KI-gestützte Empfehlungen für passende Kampagnen und Creator
+- Umfangreiche Projektverwaltung einschließlich Einreichung, Korrekturen und Freigabe
+- Web-Oberfläche für Brands zur Verwaltung von Briefings und Bewerbungen
+
+## Technischer Rahmen
+
+Expo ist als Grundlage gewünscht. Vorgeschlagen ist eine gemeinsame App für iOS und Android mit einem Backend für Accounts, Profile, Kampagnen, Bewerbungen, Chats und Medien.
+
+Eine konkrete Architektur-Empfehlung ist unten dokumentiert. Die Technologieauswahl ist ein Vorschlag; es wurde noch keine Implementierung begonnen.
+
+## Offene Entscheidungen
+
+1. Muss eine Brand das Reel vor Veröffentlichung freigeben? Empfehlung für den ersten technischen Umfang: Prüfung des veröffentlichten Links; eine Vorabfreigabe benötigt einen zusätzlichen Entwurfsprozess.
+2. Soll ein Rechts-Swipe sofort eine Bewerbung absenden oder zuerst eine kurze Bestätigung öffnen?
+3. Soll eine Bewerbung einen optionalen Pitch und gegebenenfalls ein individuelles Preisangebot enthalten?
+4. Werden Paid-Honorare fest vorgegeben oder sind Preisspannen und Verhandlungen möglich?
+5. Welche verbindlichen Angaben gelten für Versand, Produktüberlassung und gegebenenfalls Rücksendung?
+6. Wie werden Leistungen, Gegenleistung, Nutzungsrechte und Termine von beiden Seiten bestätigt?
+7. Welche Profilfelder sind Pflicht und wie wird die Verifizierung umgesetzt?
+8. Welche der vorgeschlagenen Funktionen gehören verbindlich in die erste Version?
+
+Ein Geschäftsmodell für die App selbst, etwa Abonnements oder Vermittlungsgebühren, wurde bisher nicht besprochen.
+
+## Architektur-Empfehlung für den MVP
+
+### Neue Budgetvorgabe und alternative Empfehlung
+
+Das Projekt soll mit möglichst niedrigen laufenden Kosten betrieben werden. Eigenentwicklung ist ausdrücklich möglich. Die folgende ursprüngliche Supabase-Architektur bleibt eine Option; eine Anbieterentscheidung ist noch nicht getroffen.
+
+Für Entwicklung und erste Tests ist Supabase Free weiterhin eine kostenlose Möglichkeit innerhalb seiner Limits. Pro ist keine Voraussetzung, um mit der Entwicklung zu starten.
+
+Als Alternative für günstigen selbst betriebenen Betrieb wird vorgeschlagen: Expo-App → eigene TypeScript-API → PostgreSQL. API, Datenbank und ein kleiner Hintergrundprozess können zunächst auf einem VPS laufen. Eine bestehende Auth-Bibliothek wie Better Auth übernimmt die Authentifizierungsgrundlagen; die API implementiert die Berechtigungen und Geschäftsaktionen. HTTPS, Updates, Monitoring sowie getrennt gespeicherte Datenbank- und Medien-Backups liegen dann in eigener Verantwortung. Die Datenbank wird nicht öffentlich für die App freigegeben.
+
+Preisbeispiel, geprüft am 9. September 2026: Hetzner nennt für CX23 in Deutschland/Finnland 6,53 Euro pro Monat inklusive 19 Prozent Mehrwertsteuer, ohne IPv4. Als vorläufige Schätzung sind etwa 10–15 Euro monatlich für einen kleinen Pilotbetrieb einschließlich Reserve für Backups und Netzwerkextras anzusetzen. Dies ist kein verbindlicher Gesamtpreis; Domain, E-Mail-Versand, App-Store-Konten und wachsende Nutzung sind separat zu kalkulieren.
+
+PocketBase ist eine weitere kompakte Alternative mit SQLite, Authentifizierung, Dateien und Realtime in einem Backend. Es reduziert Eigenentwicklung, erfordert aber weiterhin Hosting, Wartung und eigene Geschäftslogik. Die PostgreSQL-Variante wird hier für die relationalen Daten und die Bereitschaft zur Eigenentwicklung bevorzugt. Eine spätere Migration von PocketBase zu PostgreSQL wäre zusätzliche Arbeit.
+
+Die fachlichen Tabellen, Zustände, Transaktionen und Zugriffsanforderungen dieses Dokuments gelten auch für ein eigenes Backend. Supabase-spezifische Dienste würden durch API-Endpunkte, eigenen Chat-Transport, Dateiverwaltung und einen Hintergrundprozess ersetzt. Zunächst reicht eine gemeinsame Bereitstellung; ein einzelner Server bedeutet allerdings auch einen gemeinsamen Ausfallpunkt.
+
+Quellen: [Supabase-Preise](https://supabase.com/pricing), [Hetzner-Preise](https://docs.hetzner.com/de/general/infrastructure-and-availability/price-adjustment/), [PocketBase](https://pocketbase.io/), [Better Auth](https://better-auth.com/docs/introduction).
+
+### Einordnung: PocketBase, FastAPI, Node.js und PostgreSQL
+
+Aktualisierung: Der Nutzer beherrscht Python und JavaScript/TypeScript gleich gut. Unter dieser Voraussetzung lautet die Empfehlung Node.js mit TypeScript und PostgreSQL, insbesondere wegen gemeinsamer API-Typen und Validierungsschemas mit Expo. Der Nutzer hat diesen Vorschlag inzwischen bestätigt: Expo, Node.js mit TypeScript und PostgreSQL als modularer Monolith. Ergänzende Backend-Bausteine werden noch geprüft. FastAPI bleibt technisch gleichfalls für das Produkt geeignet; eine pauschale Überlegenheit von Node.js bei Skalierbarkeit oder Hostingkosten wird nicht angenommen.
+
+Beide können viele wartende Netzwerk-/Datenbankanfragen asynchron bearbeiten und über mehrere Prozesse oder Instanzen betrieben werden. CPU-intensive Arbeit gehört in getrennte Worker. Für Wachstum werden API-Instanzen ohne ausschließlich lokalen Sitzungszustand gestaltet, Datenbankverbindungen begrenzt, Feed-Abfragen paginiert und indexiert sowie Hintergrundaufträge dauerhaft gespeichert. Bei mehreren Instanzen benötigen Chat-Ereignisse einen gemeinsamen Verteiler und Dateien einen gemeinsam erreichbaren Speicher. Zunächst reicht ein VPS; Erweiterungen erfolgen anhand gemessener Antwortzeiten, Datenbanklast und Ressourcenverbrauch. Eine belastbare Nutzerkapazität oder ein Kostenvergleich erfordert Lasttests mit repräsentativen Abläufen.
+
+Technische Grundlagen: [Node.js Event Loop](https://nodejs.org/en/learn/asynchronous-work/dont-block-the-event-loop), [FastAPI Async](https://fastapi.tiangolo.com/async/), [FastAPI Worker-Prozesse](https://fastapi.tiangolo.com/deployment/server-workers/).
+
+Korrektur der bisherigen Empfehlung: Der Nutzer weist auf PocketBases Warnung vor produktionskritischem Einsatz und möglichen manuellen Migrationen vor Version 1.0 hin. Im aktuell geprüften Repository wird weiterhin ausdrücklich keine vollständige Rückwärtskompatibilität vor 1.0 zugesichert. Die vorherige Einordnung als günstige Option hat diesen Wartungsnachteil nicht ausreichend berücksichtigt. Für den geplanten öffentlichen Marktplatz wird PocketBase deshalb nicht mehr als bevorzugte Grundlage empfohlen. Es bleibt eine mögliche Prototyp-Option, wenn der zusätzliche Migrationsaufwand bewusst akzeptiert wird. Bevorzugt bleibt ein eigenes Backend mit PostgreSQL; Node.js mit TypeScript wurde inzwischen gewählt. Auch Eigenentwicklung verlangt Tests, Updates, Backups und sichere Authentifizierung und ist nicht automatisch zuverlässiger.
+
+PocketBase selbst ist kostenlose Open-Source-Software und bietet kein eigenes Hosting an. Lokal fallen keine zusätzlichen Hostinggebühren an; online werden Server, Backups und gegebenenfalls E-Mail-Dienste bezahlt. Das oben genannte Serverbudget gilt auch als grobe Planung für PocketBase. PocketBase bringt bereits ein Backend mit und verwendet SQLite. Eine zusätzliche FastAPI- oder Node.js-API ist für den Einstieg damit nicht grundsätzlich erforderlich.
+
+Für ein vollständig eigenes Backend sind Python mit FastAPI und Node.js mit TypeScript beide mögliche Wege. FastAPI ist ein Webframework, Node.js eine Laufzeitumgebung, zu der man ein Webframework auswählt. Die Entscheidung ist inzwischen zugunsten von Node.js mit TypeScript gefallen. Ursprüngliche Abwägung: vorhandene Sprachkenntnisse priorisieren. Bei gleicher Erfahrung spricht die gemeinsame TypeScript-Sprache mit Expo für Node.js; bei stärkerer Python-Erfahrung ist FastAPI sinnvoll. FastAPI unterstützt Validierung und automatische OpenAPI-Dokumentation; daraus lässt sich ein TypeScript-Client für die App generieren. Das Hostingbudget hängt primär von Ressourcen und Last ab, nicht allein von der Sprache.
+
+PostgreSQL passt zu Brands, Kampagnen, Bewerbungen und Kooperationen, weil diese Daten klare Beziehungen besitzen. Fremdschlüssel sichern Beziehungen, eindeutige Constraints verhindern doppelte Bewerbungen, Transaktionen und gezielte Sperren ermöglichen konsistente Annahmen bei begrenzten Plätzen. SQL und Indizes unterstützen Filter und spätere Auswertungen. PostgreSQL ist lizenzkostenfrei und mit beiden Backend-Sprachen nutzbar. Es ersetzt weder Authentifizierung noch Serverlogik. SQLite unterstützt ebenfalls Beziehungen und Transaktionen; PostgreSQL wird hier wegen der Flexibilität bei konkurrierenden Schreibzugriffen und dem späteren Betrieb gewählt, nicht weil SQLite grundsätzlich ungeeignet wäre.
+
+Quellen: [PocketBase FAQ](https://pocketbase.io/faq/), [FastAPI](https://fastapi.tiangolo.com/), [Node.js](https://nodejs.org/en/about), [PostgreSQL](https://www.postgresql.org/about/).
+
+### Ursprünglicher Vorschlag mit Supabase
+
+Empfohlen wird ein modular aufgebautes Backend mit einer gemeinsamen PostgreSQL-Datenbank und einer Expo-App für beide Rollen. Die fachlichen Module bleiben getrennt, werden aber gemeinsam entwickelt und betrieben. Separate Microservices sind für diesen Umfang nicht erforderlich.
+
+### Komponenten
+
+| Komponente | Vorschlag | Verantwortung |
+| --- | --- | --- |
+| Mobile App | Expo, React Native, TypeScript, Expo Router | Creator- und Brand-Oberflächen, Navigation, Swipe-Interaktion |
+| Backend-Plattform | Supabase | Authentifizierung, PostgreSQL, Storage, Realtime und serverseitige Funktionen |
+| Geschäftslogik | PostgreSQL-Funktionen für atomare Aktionen; Edge Functions für externe Dienste | Bewerben, Annehmen, Vereinbarungen bestätigen, Links einreichen |
+| Medien | Supabase Storage | Profilbilder, Logos und Produktbilder; zunächst keine Reel-Dateien |
+| Chat | Nachrichtentabelle und Supabase Realtime | Dauerhafte Nachrichten mit Echtzeitaktualisierung |
+| Benachrichtigungen | Datenbank-Outbox, Hintergrundverarbeitung und Expo Push Service | Neue Bewerbungen, Annahmen und Nachrichten |
+| Administration | Kleine geschützte Web-Oberfläche | Meldungen, Sperren, Kampagnenmoderation |
+
+Die App liest freigegebene Daten mit dem Benutzer-Token und datenbankseitigen Zugriffsregeln. Einfache Profiländerungen können denselben Weg nutzen. Geschäftskritische Statuswechsel erfolgen ausschließlich über geprüfte Serveraktionen. Privilegierte Schlüssel gehören niemals in die App.
+
+### Fachliche Module und Datenmodell
+
+| Modul | Wesentliche Tabellen | Zweck |
+| --- | --- | --- |
+| Accounts | profiles, creator_profiles | Identität, Creator-Angaben und Instagram-Referenzen |
+| Brands | brands, brand_members | Unternehmen und zugehörige Benutzer mit Berechtigungen |
+| Kampagnen | campaigns | Produkt, Briefing, Deal-Art, Vergütung, Fristen, Plätze und Status |
+| Entdecken | campaign_dismissals | Links-Swipes, damit verworfene Kampagnen nicht ständig erneut erscheinen |
+| Bewerbungen | applications | Creator bewirbt sich auf genau eine Kampagne |
+| Kooperationen | collaborations, agreement_versions, agreement_confirmations | Zusammenarbeit mit versionierter Vereinbarung und Bestätigungen beider Seiten |
+| Reels | reel_submissions | Ein Beitragslink pro geliefertem Reel, Zeitpunkt und Prüfstatus |
+| Chat | conversations, messages | Ein Gespräch pro Kooperation, Nachrichten und Lesestatus |
+| Versand | shipping_details | Private Lieferdaten, nur für die berechtigte Zusammenarbeit |
+| Betrieb | device_tokens, notification_outbox, reports, blocks, audit_events | Zustellung, Moderation und nachvollziehbare Änderungen |
+
+Eine Brand besitzt viele Kampagnen; eine Kampagne erhält viele Bewerbungen. Pro Creator und Kampagne gibt es höchstens eine Bewerbung. Eine angenommene Bewerbung erzeugt genau eine Kooperation und einen Chat. Eine Kooperation kann mehrere Reel-Einreichungen besitzen.
+
+Brands werden getrennt von Benutzerkonten modelliert. Im MVP kann eine Brand zunächst nur einen Ansprechpartner haben; weitere Teammitglieder passen später in dasselbe Datenmodell.
+
+Paid-Beträge werden in ganzzahligen kleinsten Währungseinheiten und mit Währung gespeichert. Barter-Produktwert und Geldhonorar sind separate Felder. Validierungsregeln verlangen je nach Deal-Art die passenden Angaben. Empfehlung für den MVP: feste Vergütung und eine Startwährung.
+
+### Zustände und verlässliche Übergänge
+
+- Kampagne: draft → published → closed; zusätzlich archived.
+- Bewerbung: pending → accepted, rejected oder withdrawn.
+- Kooperation: negotiating → active → submitted → completed; zusätzlich cancelled. Bei erforderlicher Nachbesserung geht sie zurück nach active.
+- Versandstatus und Zahlungsstatus werden getrennt vom Kooperationsstatus geführt.
+
+Das Annehmen einer Bewerbung prüft Anmeldung, Brand-Mitgliedschaft, aktuellen Bewerbungsstatus und freie Plätze. Statusänderung, Platzbelegung, Kooperation, Chat und Benachrichtigungsauftrag werden in einer Datenbanktransaktion gespeichert. Gleichzeitige Annahmen dürfen die Platzanzahl nicht überschreiten. Wiederholte Requests dürfen keine doppelten Kooperationen erzeugen.
+
+Die Vereinbarung speichert eine unveränderliche Version von Vergütung, Reel-Anzahl, Termin und Nutzungsbedingungen. Erst wenn beide Parteien dieselbe Version bestätigt haben, wird die Kooperation aktiv. Änderungen an der Kampagne ändern keine bestehende Vereinbarung.
+
+Der Feed filtert veröffentlichte, noch offene Kampagnen nach Deal-Präferenz, Sprache und Themen. Bereits beworbene oder verworfene Kampagnen sowie blockierte Gegenparteien werden ausgeschlossen. Cursor-Paginierung und passende Datenbankindizes reichen zunächst aus; ein KI-Empfehlungssystem ist keine Voraussetzung.
+
+### Instagram und Erfüllungsnachweis
+
+Für den MVP werden Instagram-Account und Reel-Links manuell angegeben. Die App benötigt zunächst keine automatische Instagram-Veröffentlichung, keinen Import von Statistiken und keine Instagram-API-Anbindung.
+
+Die App prüft das URL-Format; die Brand prüft über den Link Account, Inhalt und Veröffentlichung. Ein Link allein beweist weder Eigentümerschaft noch die dauerhafte Verfügbarkeit des Reels. Reichweitenangaben bleiben als Selbstauskunft gekennzeichnet. Automatische Verifikation wäre eine spätere, separat zu prüfende Integration.
+
+Portfolio-Reels werden ebenfalls verlinkt. Profil- und Produktbilder bleiben normale App-Medien und sind keine buchbaren Foto-Leistungen.
+
+### Zugriffsschutz
+
+- Creator bearbeiten nur das eigene Profil und die eigenen Bewerbungen innerhalb erlaubter Aktionen.
+- Brands verwalten nur Kampagnen ihrer Organisation und deren Bewerbungen.
+- Nur Beteiligte können Vereinbarungen, Chats und Einreichungen einer Kooperation sehen.
+- Lieferadressen sind von sichtbaren Profilen getrennt und erst für die erforderliche Zusammenarbeit zugänglich.
+- Rollen und Organisationsmitgliedschaften sind keine frei editierbaren Profilfelder.
+- Row Level Security schützt jede exponierte Tabelle; zusätzlich verhindern Spaltenrechte und Serveraktionen unzulässige Statusänderungen.
+- Storage-Regeln unterscheiden veröffentlichbare Profil-/Produktbilder von privaten Dateien.
+- Administrative Aktionen laufen über separat geprüfte Berechtigungen und werden protokolliert.
+
+### Benachrichtigungen und Betrieb
+
+Geschäftsereignisse erzeugen innerhalb derselben Transaktion einen Outbox-Eintrag. Ein Hintergrundprozess sendet Push-Nachrichten und wiederholt fehlgeschlagene Versuche begrenzt. Push ist nur ein Hinweis; der verbindliche Status liegt immer in der Datenbank. Ungültige Gerätetokens werden deaktiviert.
+
+Entwicklung und Produktion erhalten getrennte Umgebungen. Datenbankmigrationen liegen im Repository. Fehlerprotokollierung, Datenbank- und Medien-Backups mit Wiederherstellungstest, Rate Limits für Bewerbungen und Nachrichten sowie ein definierter Löschprozess gehören zum Betrieb. Backups für Datenbank und Storage müssen getrennt betrachtet werden.
+
+Für Push-Tests wird ein Expo Development Build eingeplant. Gezielte Tests prüfen Zugriffsrechte zwischen fremden Accounts, doppelte Requests, gleichzeitige Annahmen bei begrenzten Plätzen und den vollständigen Ablauf von Bewerbung bis Reel-Abnahme.
+
+Paid bedeutet im ersten Umfang ein vereinbartes Honorar; die Auszahlung kann außerhalb der App stattfinden. Eine Bestätigung der Reel-Leistung beweist keine Zahlung. Eine spätere integrierte Zahlungsabwicklung braucht eigene Zahlungszustände, Webhook-Verarbeitung und Abstimmung mit dem Zahlungsanbieter.
+
+### Reihenfolge der Umsetzung
+
+1. Expo-Projekt, Authentifizierung, Datenbankschema und Zugriffsregeln.
+2. Creator-/Brand-Profile und Kampagnenverwaltung.
+3. Feed, Swipes, Bewerbungen und atomare Annahme.
+4. Chat und beidseitige Vereinbarungsbestätigung.
+5. Reel-Link-Einreichung, Prüfung und Abschluss.
+6. Push, Moderation und Betriebsprüfungen vor dem Pilotstart.
+
+### Technische Quellen
+
+- [Supabase: Datenbank und integrierte Dienste](https://supabase.com/docs/guides/database/overview)
+- [Supabase: Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security)
+- [Supabase: Storage-Zugriffsregeln](https://supabase.com/docs/guides/storage/security/access-control)
+- [Supabase: Realtime mit PostgreSQL-Änderungen](https://supabase.com/docs/guides/realtime/postgres-changes)
+- [Expo: Push-Benachrichtigungen einrichten](https://docs.expo.dev/push-notifications/push-notifications-setup/)
+- [Expo: Push-Nachrichten senden und Zustellfehler behandeln](https://docs.expo.dev/push-notifications/sending-notifications/)
+
+
+## Open-Source-Alternativen zu PocketBase
+
+Der gewählte Stack bleibt Expo, Node.js/TypeScript und PostgreSQL. Als ergänzende Prüfung wurden folgende für Produktionsbetrieb ausgelegte Backend-Plattformen betrachtet. Produktionsreife ersetzt nicht sichere Konfiguration, Updates, Tests und Backups.
+
+- Supabase Self-Hosted: PostgreSQL, Auth, Storage und Realtime im eigenen Betrieb. Kein Supabase-Cloud-Abonnement erforderlich; Infrastruktur und Betrieb werden selbst bezahlt. Passt zur gewählten Datenbank, umfasst aber mehrere Dienste und mehr Betriebsaufwand als eine kleine eigene API.
+- Appwrite Self-Hosted: Open-Source-Plattform mit Auth, Daten-API, Storage, Funktionen und Realtime. Ein alternativer Gesamtansatz mit eigener Datenabstraktion; kein einfacher Zusatz zu unserem frei modellierten PostgreSQL-Backend. Mehrere Container müssen betrieben werden.
+- Parse Server: Open-Source-Backend für Node.js mit PostgreSQL-Unterstützung, Benutzerverwaltung, Berechtigungen und LiveQuery. Passt grundsätzlich zum Stack, gibt aber ein eigenes Objekt-/API-Modell vor. Vor einer Auswahl müssen Transaktionen und die benötigten Abfragen mit dem PostgreSQL-Adapter geprüft werden.
+
+Empfehlung für das niedrige Budget bleibt vorerst die eigene modulare API mit gezielt ausgewählten Bibliotheken. Eine komplette Backend-Plattform ist keine Voraussetzung. Wenn viele fertige Backend-Funktionen gewünscht sind und PostgreSQL beibehalten werden soll, ist Supabase Self-Hosted der naheliegende Kandidat für eine gesonderte Evaluierung. Es wurde noch keine dieser Plattformen ausgewählt oder installiert.
+
+Quellen: [Supabase Self-Hosting](https://supabase.com/docs/guides/self-hosting/docker), [Appwrite Self-Hosting](https://appwrite.io/docs/advanced/self-hosting), [Appwrite Repository](https://github.com/appwrite/appwrite), [Parse Server Guide](https://docs.parseplatform.org/parse-server/guide/), [Parse Server Repository](https://github.com/parse-community/parse-server).
+
+
+## Aktuelle Empfehlung: Supabase Self-Hosted als Infrastruktur
+
+Auf die Rückfrage des Nutzers wird Supabase Self-Hosted als sinnvoller Kompromiss empfohlen: fertige Authentifizierung, Storage und Realtime bei eigener Infrastruktur. Der bereits gewählte Stack Expo, Node.js/TypeScript und PostgreSQL bleibt erhalten. Dies konkretisiert die bisherige Alternativenprüfung; eine Installation oder Serverbestellung wurde nicht beauftragt.
+
+Supabase übernimmt Auth, PostgreSQL, Bilder-Storage und Realtime. Eine schlanke Node.js-API übernimmt die fachlichen Aktionen wie Bewerben, Annehmen und Bestätigen von Vereinbarungen sowie die Verarbeitung von Benachrichtigungsaufträgen. Es wird keine zweite Auth-Lösung und keine zusätzliche unabhängige Datenbank aufgebaut. Die API prüft Supabase-Sitzungen und Berechtigungen; kritische Änderungen laufen in Datenbanktransaktionen. Direkte App-Zugriffe auf Supabase werden durch RLS und Storage-Regeln begrenzt. Supabase Edge Functions sind nicht die Node.js-Laufzeit; für den gewählten Node.js-Code wird ein eigener Dienst verwendet.
+
+Die offizielle Docker-Anleitung nennt für alle Komponenten mindestens 4 GB RAM, 2 CPU-Kerne und 40 GB SSD; empfohlen sind mindestens 8 GB RAM, 4 Kerne und 80 GB SSD. Für den Pilot mit zusätzlicher API wird die empfohlene Größe als Ausgangspunkt bevorzugt. Nicht benötigte Dienste können entfernt werden. Vorläufiger Budgetrahmen: etwa 15–25 Euro monatlich für VPS und externe Backups, abhängig vom Anbieter und Umfang; dies ist eine Schätzung, kein Tarifangebot. Domain und E-Mail-Versand sind gesondert zu kalkulieren. Die bisherige Schätzung von 10–15 Euro für eine kleine eigene API ist nicht unverändert als Vollbudget für diesen Stack anzusehen.
+
+Self-Hosting spart das Cloud-Abonnement und Entwicklungsarbeit für Basisfunktionen, verlangt aber eigene Updates, HTTPS-Konfiguration, Monitoring und getrennte Sicherung von Datenbank und Dateien mit Wiederherstellungstest. Es ist nicht pauschal billiger als Managed Hosting, wenn Wartungszeit mitgerechnet wird.
+
+Quelle: [Supabase Docker und Ressourcenanforderungen](https://supabase.com/docs/guides/self-hosting/docker).
