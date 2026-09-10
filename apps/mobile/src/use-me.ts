@@ -39,6 +39,7 @@ export function useMe(userId?: string) {
         active = false;
         controller.abort();
       };
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- version is a manual refetch trigger, not read in the body.
     }, [userId, version])
   );
   return {

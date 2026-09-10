@@ -28,7 +28,7 @@ export default function BrandCampaignForm() {
 
   useFocusEffect(
     useCallback(() => {
-      if (!id || !session) {
+      if (!id || !session?.user.id) {
         setLoading(false);
         return;
       }

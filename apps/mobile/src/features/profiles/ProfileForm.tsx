@@ -52,7 +52,7 @@ export function ProfileForm({
   const [portfolio, setPortfolio] = useState(
     details?.role === ROLE.creator ? details.portfolioUrls.join('\n') : ''
   );
-  const [deals, setDeals] = useState<Array<'barter' | 'paid'>>(
+  const [deals, setDeals] = useState<('barter' | 'paid')[]>(
     details?.role === ROLE.creator
       ? details.dealPreferences
       : ['barter', 'paid']

@@ -1,7 +1,7 @@
 import type { Campaign, DealType } from '@create-for-christ/contracts';
 import { DEAL, ROLE } from '@create-for-christ/contracts';
-import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -40,28 +40,31 @@ export default function App({
   const [reload, setReload] = useState(0);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
-  useEffect(() => {
-    const controller = new AbortController();
-    let active = true;
-    const timer = setTimeout(() => controller.abort(), TIMEOUT.discoveryMs);
-    setState('loading');
-    getCampaigns(filter, controller.signal)
-      .then((data) => {
-        if (active) {
-          setCampaigns(data);
-          setState('ready');
-        }
-      })
-      .catch(() => {
-        if (active) setState('error');
-      })
-      .finally(() => clearTimeout(timer));
-    return () => {
-      active = false;
-      clearTimeout(timer);
-      controller.abort();
-    };
-  }, [filter, reload]);
+  useFocusEffect(
+    useCallback(() => {
+      const controller = new AbortController();
+      let active = true;
+      const timer = setTimeout(() => controller.abort(), TIMEOUT.discoveryMs);
+      setState('loading');
+      getCampaigns(filter, controller.signal)
+        .then((data) => {
+          if (active) {
+            setCampaigns(data);
+            setState('ready');
+          }
+        })
+        .catch(() => {
+          if (active) setState('error');
+        })
+        .finally(() => clearTimeout(timer));
+      return () => {
+        active = false;
+        clearTimeout(timer);
+        controller.abort();
+      };
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- reload is a manual refetch trigger, not read in the body.
+    }, [filter, reload])
+  );
 
   return (
     <SafeAreaView style={styles.safe}>
