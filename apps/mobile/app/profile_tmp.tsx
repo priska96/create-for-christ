@@ -3,8 +3,8 @@ import { ActivityIndicator } from 'react-native';
 import { authClient } from '../src/auth-client';
 import { ROUTE } from '../src/constants';
 import { ProfileForm } from '../src/features/profiles/ProfileForm';
+import { useMe } from '../src/hooks';
 import { Action, Notice, Page, SignOutAction } from '../src/ui';
-import { useMe } from '../src/use-me';
 
 export default function Profile() {
   const { data: session, isPending } = authClient.useSession();

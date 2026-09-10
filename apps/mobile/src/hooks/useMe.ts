@@ -2,7 +2,7 @@ import type { Me } from '@create-for-christ/contracts';
 import { MESSAGES } from '@create-for-christ/contracts';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ApiError, getMe } from './api';
+import { ApiError, getMe } from '../api';
 
 export function useMe(userId?: string) {
   const [me, setMe] = useState<Me | null>(null);

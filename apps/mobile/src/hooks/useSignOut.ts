@@ -1,8 +1,8 @@
 import { MESSAGES } from '@create-for-christ/contracts';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { authClient } from './auth-client';
-import { ROUTE } from './constants';
+import { authClient } from '../auth-client';
+import { ROUTE } from '../constants';
 
 export function useSignOut() {
   const [busy, setBusy] = useState(false),

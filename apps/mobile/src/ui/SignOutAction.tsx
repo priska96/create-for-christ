@@ -1,5 +1,5 @@
-import { useSignOut } from '../use-sign-out';
 import { Action } from './action';
+import { useSignOut } from '../hooks';
 import { Notice } from './notice';
 
 export function SignOutAction({ disabled = false }: { disabled?: boolean }) {

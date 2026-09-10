@@ -14,9 +14,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { getCampaigns } from './src/api';
 import { apiUrl } from './src/auth-client';
 import { FILTER_ALL, MONEY, ROUTE, TIMEOUT } from './src/constants';
+import { useSignOut } from './src/hooks';
 import { styles } from './src/features/discovery/styles';
 import { colors, layout, radii } from './src/ui/theme';
-import { useSignOut } from './src/use-sign-out';
 
 type Role = 'creator' | 'brand';
 const filters = [

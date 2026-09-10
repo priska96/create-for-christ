@@ -22,9 +22,9 @@ import {
 } from '../src/api';
 import { authClient } from '../src/auth-client';
 import { CAMPAIGN_STATUS_LABEL, ROUTE } from '../src/constants';
+import { useMe } from '../src/hooks';
 import { Action, Notice, Page, SignOutAction, ui } from '../src/ui';
 import { colors, fontSize, fontWeight, radii, spacing } from '../src/ui/theme';
-import { useMe } from '../src/use-me';
 
 export default function BrandCampaigns() {
   const { data: session, isPending } = authClient.useSession();

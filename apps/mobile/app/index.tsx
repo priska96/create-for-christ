@@ -3,9 +3,9 @@ import { ActivityIndicator } from 'react-native';
 import Discovery from '../App';
 import { authClient } from '../src/auth-client';
 import { ROUTE } from '../src/constants';
+import { useMe } from '../src/hooks';
 import { Action, Notice, Page, SignOutAction } from '../src/ui';
 import { colors } from '../src/ui/theme';
-import { useMe } from '../src/use-me';
 
 export default function Index() {
   const { data: session, isPending, error, refetch } = authClient.useSession();

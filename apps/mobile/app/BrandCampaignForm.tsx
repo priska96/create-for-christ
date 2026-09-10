@@ -15,8 +15,8 @@ import { ApiError, getBrandCampaigns } from '../src/api';
 import { authClient } from '../src/auth-client';
 import { ROUTE } from '../src/constants';
 import { CampaignForm } from '../src/features/campaigns/CampaignForm';
+import { useMe } from '../src/hooks';
 import { Action, Notice, Page, SignOutAction } from '../src/ui';
-import { useMe } from '../src/use-me';
 
 export default function BrandCampaignForm() {
   const { id } = useLocalSearchParams<{ id?: string }>();
