@@ -1,0 +1,97 @@
+erDiagram
+    PROFILES {
+        uuid id PK
+        text display_name
+        text role "creator | brand"
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    AUTH_IDENTITIES {
+        text provider PK
+        text subject PK
+        uuid profile_id FK
+    }
+
+    CREATOR_PROFILES {
+        uuid profile_id PK,FK
+        text bio
+        text instagram_handle
+        text_array languages
+        text_array topics
+        text location
+        text_array deal_preferences
+        text_array portfolio_urls
+    }
+
+    BRANDS {
+        uuid id PK
+        text name
+        text description
+        text website
+        text industry
+        text location
+        timestamptz created_at
+    }
+
+    BRAND_MEMBERS {
+        uuid brand_id PK,FK
+        uuid profile_id PK,FK
+        text role "owner | member"
+    }
+
+    AUTH_USERS {
+        text id PK
+        text name
+        text email UK
+        boolean emailVerified
+        text image
+        timestamptz createdAt
+        timestamptz updatedAt
+    }
+
+    AUTH_SESSIONS {
+        text id PK
+        text token UK
+        timestamptz expiresAt
+        text userId FK
+        text ipAddress
+        text userAgent
+        timestamptz createdAt
+        timestamptz updatedAt
+    }
+
+    AUTH_ACCOUNTS {
+        text id PK
+        text accountId
+        text providerId
+        text userId FK
+        text accessToken
+        text refreshToken
+        text idToken
+        text scope
+        text password
+    }
+
+    AUTH_VERIFICATIONS {
+        text id PK
+        text identifier
+        text value
+        timestamptz expiresAt
+    }
+
+    AUTH_MAIL_OUTBOX {
+        uuid id PK
+        text recipient
+        text subject
+        text body
+        integer attempts
+        timestamptz available_at
+    }
+
+    PROFILES ||--o{ AUTH_IDENTITIES : "maps external identity"
+    PROFILES ||--o| CREATOR_PROFILES : "creator data"
+    PROFILES ||--o{ BRAND_MEMBERS : "brand membership"
+    BRANDS ||--o{ BRAND_MEMBERS : "members"
+    AUTH_USERS ||--o{ AUTH_SESSIONS : "sessions"
+    AUTH_USERS ||--o{ AUTH_ACCOUNTS : "accounts"

@@ -1,0 +1,148 @@
+%% UGC Creator / Brand App — Fachliches Domain-Modell
+%% Dieses Diagramm abstrahiert bewusst vom physischen SQL-Schema
+%% und zeigt die fachlichen Kernobjekte und ihre Beziehungen.
+
+classDiagram
+direction LR
+
+class User {
+  +UUID profileId
+  +string displayName
+  +UserRole role
+}
+
+class CreatorProfile {
+  +string bio
+  +string location
+  +string instagramHandle
+  +string[] languages
+  +string[] topics
+  +string[] dealPreferences
+  +string[] portfolioUrls
+}
+
+class Brand {
+  +UUID brandId
+  +string name
+  +string description
+  +string website
+  +string industry
+  +string location
+}
+
+class BrandMembership {
+  +BrandRole role
+}
+
+class Campaign {
+  +UUID campaignId
+  +string title
+  +string productName
+  +string description
+  +DealType dealType
+  +CampaignStatus status
+  +int reelCount
+  +int creatorSlots
+  +datetime applicationDeadline
+  +datetime contentDeadline
+  +bool shippingRequired
+  +string[] requiredMentions
+  +string[] usageChannels
+  +bool paidAdsAllowed
+}
+
+class Application {
+  +UUID applicationId
+  +ApplicationStatus status
+  +string pitch
+  +datetime createdAt
+}
+
+class Collaboration {
+  +UUID collaborationId
+  +CollaborationStatus status
+  +datetime createdAt
+}
+
+class Message {
+  +UUID messageId
+  +string body
+  +datetime createdAt
+}
+
+class ReelSubmission {
+  +UUID submissionId
+  +string instagramUrl
+  +datetime createdAt
+}
+
+class AuthIdentity {
+  +string provider
+  +string subject
+}
+
+class UserRole {
+  <<enumeration>>
+  creator
+  brand
+}
+
+class BrandRole {
+  <<enumeration>>
+  owner
+  member
+}
+
+class DealType {
+  <<enumeration>>
+  barter
+  paid
+}
+
+class CampaignStatus {
+  <<enumeration>>
+  draft
+  published
+  closed
+  archived
+}
+
+class ApplicationStatus {
+  <<enumeration>>
+  pending
+  accepted
+  rejected
+  withdrawn
+}
+
+class CollaborationStatus {
+  <<enumeration>>
+  negotiating
+  active
+  submitted
+  completed
+  cancelled
+}
+
+User "1" --> "0..1" CreatorProfile : has creator profile
+User "1" --> "0..*" BrandMembership : belongs to brands
+Brand "1" --> "1..*" BrandMembership : has members
+Brand "1" --> "0..*" Campaign : creates
+CreatorProfile "1" --> "0..*" Application : submits
+Campaign "1" --> "0..*" Application : receives
+Application "1" --> "0..1" Collaboration : becomes
+Collaboration "1" --> "0..*" Message : contains
+User "1" --> "0..*" Message : sends
+Collaboration "1" --> "0..*" ReelSubmission : receives
+User "1" --> "0..*" AuthIdentity : authenticated via
+
+User --> UserRole
+BrandMembership --> BrandRole
+Campaign --> DealType
+Campaign --> CampaignStatus
+Application --> ApplicationStatus
+Collaboration --> CollaborationStatus
+
+note for Application "Creator swipes right = Bewerbung anlegen\nCreator swipes left = keine Application"
+note for Collaboration "Entsteht fachlich nach angenommener Bewerbung"
+note for Campaign "Das Swipe-Objekt auf Creator-Seite ist die veröffentlichte Kampagne"

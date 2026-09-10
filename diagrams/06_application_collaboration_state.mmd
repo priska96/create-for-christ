@@ -1,0 +1,64 @@
+%% UGC Creator / Brand App — Application & Collaboration State Diagram
+%% Statuswerte entsprechen den SQL-Constraints.
+
+stateDiagram-v2
+
+    [*] --> Pending : Creator swipes right / submits application
+
+    state "Application" as Application {
+        Pending --> Accepted : Brand accepts
+        Pending --> Rejected : Brand rejects
+        Pending --> Withdrawn : Creator withdraws
+
+        Accepted --> [*]
+        Rejected --> [*]
+        Withdrawn --> [*]
+    }
+
+    Accepted --> Negotiating : Collaboration created
+
+    state "Collaboration" as Collaboration {
+        Negotiating --> Active : Terms agreed / work starts
+        Active --> Submitted : Creator submits content
+        Submitted --> Completed : Brand approves / collaboration finishes
+
+        Negotiating --> Cancelled : Collaboration cancelled
+        Active --> Cancelled : Collaboration cancelled
+        Submitted --> Cancelled : Collaboration cancelled
+
+        Completed --> [*]
+        Cancelled --> [*]
+    }
+
+    note right of Pending
+      applications.status:
+      pending
+    end note
+
+    note right of Accepted
+      applications.status:
+      accepted
+
+      collaborations row can now
+      be created for this application
+    end note
+
+    note right of Negotiating
+      collaborations.status:
+      negotiating
+    end note
+
+    note right of Active
+      collaborations.status:
+      active
+    end note
+
+    note right of Submitted
+      collaborations.status:
+      submitted
+    end note
+
+    note right of Completed
+      collaborations.status:
+      completed
+    end note

@@ -1,0 +1,65 @@
+%% UGC Creator / Brand App — User Flow
+%% Fachlicher App-Flow basierend auf dem vorhandenen Datenmodell.
+
+flowchart LR
+
+    START([App Start]) --> AUTH{Authenticated?}
+    AUTH -- No --> LOGIN[Login / Register]
+    LOGIN --> ROLE{Choose role}
+    AUTH -- Yes --> ROLECHECK{Profile role}
+
+    ROLE -- Creator --> CREATOR_SETUP[Create / complete Creator Profile]
+    ROLE -- Brand --> BRAND_SETUP[Create / complete Brand Profile]
+
+    ROLECHECK -- creator --> CREATOR_HOME[Creator Home]
+    ROLECHECK -- brand --> BRAND_HOME[Brand Home]
+
+    CREATOR_SETUP --> CREATOR_HOME
+    BRAND_SETUP --> BRAND_HOME
+
+    subgraph CREATOR["Creator Flow"]
+        CREATOR_HOME --> DISCOVER[Discover published campaigns]
+        DISCOVER --> SWIPE{Swipe decision}
+
+        SWIPE -- Left --> SKIP[Not interested]
+        SKIP --> DISCOVER
+
+        SWIPE -- Right --> APPLY[Create Application]
+        APPLY --> PITCH[Optional pitch]
+        PITCH --> PENDING[Application status: pending]
+
+        PENDING --> CREATOR_APPS[My applications]
+        CREATOR_APPS --> APP_STATUS{Application status}
+
+        APP_STATUS -- pending --> WAIT[Wait for brand decision]
+        APP_STATUS -- rejected --> REJECTED[Application rejected]
+        APP_STATUS -- withdrawn --> WITHDRAWN[Application withdrawn]
+        APP_STATUS -- accepted --> COLLAB[Open Collaboration]
+
+        COLLAB --> CREATOR_CHAT[Chat with Brand]
+        COLLAB --> SUBMIT[Submit Reel / Content URL]
+        SUBMIT --> COLLAB_STATUS[Track collaboration status]
+    end
+
+    subgraph BRAND["Brand Flow"]
+        BRAND_HOME --> CAMPAIGNS[Manage campaigns]
+        CAMPAIGNS --> CREATE_CAMPAIGN[Create campaign draft]
+        CREATE_CAMPAIGN --> CAMPAIGN_DETAILS[Product, deal, deadlines, usage rights]
+        CAMPAIGN_DETAILS --> PUBLISH[Publish campaign]
+
+        PUBLISH --> APPLICATIONS[Receive Applications]
+        APPLICATIONS --> REVIEW[Review Creator Profile + pitch]
+        REVIEW --> BRAND_DECISION{Accept?}
+
+        BRAND_DECISION -- No --> BRAND_REJECT[Set Application: rejected]
+        BRAND_DECISION -- Yes --> BRAND_ACCEPT[Set Application: accepted]
+
+        BRAND_ACCEPT --> CREATE_COLLAB[Create Collaboration]
+        CREATE_COLLAB --> BRAND_CHAT[Chat with Creator]
+        CREATE_COLLAB --> REVIEW_CONTENT[Review submitted content]
+        REVIEW_CONTENT --> UPDATE_COLLAB[Update collaboration status]
+    end
+
+    WAIT -. status change .-> APP_STATUS
+    BRAND_REJECT -. reflected in creator app .-> REJECTED
+    BRAND_ACCEPT -. reflected in creator app .-> COLLAB

@@ -1,0 +1,85 @@
+erDiagram
+    BRANDS {
+        uuid id PK
+        text name
+        text industry
+        text location
+    }
+
+    CAMPAIGNS {
+        uuid id PK
+        uuid brand_id FK
+        text title
+        text product_name
+        text deal_type "barter | paid"
+        integer amount_per_reel_minor
+        integer product_value_minor
+        text currency
+        integer reel_count
+        integer creator_slots
+        text status
+        timestamptz application_deadline
+        text product_image_url
+        integer reel_length_seconds
+        timestamptz content_deadline
+        boolean shipping_required
+        text_array required_mentions
+        integer min_posting_duration_days
+        integer usage_duration_days
+        text_array usage_channels
+        boolean usage_paid_ads_allowed
+    }
+
+    CREATOR_PROFILES {
+        uuid profile_id PK,FK
+        text instagram_handle
+        text location
+        text_array topics
+        text_array deal_preferences
+        text_array portfolio_urls
+    }
+
+    APPLICATIONS {
+        uuid id PK
+        uuid campaign_id FK
+        uuid creator_id FK
+        text status "pending | accepted | rejected | withdrawn"
+        text pitch
+        timestamptz created_at
+    }
+
+    COLLABORATIONS {
+        uuid id PK
+        uuid application_id FK "UNIQUE"
+        text status "negotiating | active | submitted | completed | cancelled"
+        timestamptz created_at
+    }
+
+    REEL_SUBMISSIONS {
+        uuid id PK
+        uuid collaboration_id FK
+        text instagram_url
+        timestamptz created_at
+    }
+
+    MESSAGES {
+        uuid id PK
+        uuid collaboration_id FK
+        uuid sender_id FK
+        text body
+        timestamptz created_at
+    }
+
+    PROFILES {
+        uuid id PK
+        text display_name
+        text role
+    }
+
+    BRANDS ||--o{ CAMPAIGNS : "publishes"
+    CAMPAIGNS ||--o{ APPLICATIONS : "gets applications"
+    CREATOR_PROFILES ||--o{ APPLICATIONS : "applies"
+    APPLICATIONS ||--o| COLLABORATIONS : "accepted into"
+    COLLABORATIONS ||--o{ REEL_SUBMISSIONS : "receives content"
+    COLLABORATIONS ||--o{ MESSAGES : "conversation"
+    PROFILES ||--o{ MESSAGES : "sender"
