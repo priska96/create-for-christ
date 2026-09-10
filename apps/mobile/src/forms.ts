@@ -1,13 +1,13 @@
-export function splitList(value: string, separator = ",") {
+export function splitList(value: string, separator = ',') {
   return value
     .split(separator)
     .map((item) => item.trim())
     .filter(Boolean);
 }
 export function fieldErrors(
-  issues: { path: PropertyKey[]; message: string }[],
+  issues: { path: PropertyKey[]; message: string }[]
 ) {
   return Object.fromEntries(
-    issues.map((issue) => [String(issue.path[0]), issue.message]),
+    issues.map((issue) => [String(issue.path[0]), issue.message])
   );
 }

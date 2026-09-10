@@ -1,21 +1,22 @@
-import { API_PATH, MESSAGES } from "@create-for-christ/contracts";
-import { router } from "expo-router";
-import { useState } from "react";
-import { apiUrl, authClient, authError } from "../src/auth-client";
-import { ROUTE } from "../src/constants";
-import { Action, Field, Notice, Page } from "../src/ui";
+import { API_PATH, MESSAGES } from '@create-for-christ/contracts';
+import { router } from 'expo-router';
+import { useState } from 'react';
+import { apiUrl, authClient, authError } from '../src/auth-client';
+import { ROUTE } from '../src/constants';
+import { Action, Field, Notice, Page } from '../src/ui';
+
 export default function ForgotPassword() {
-  const [email, setEmail] = useState(""),
+  const [email, setEmail] = useState(''),
     [busy, setBusy] = useState(false),
     [sent, setSent] = useState(false),
-    [error, setError] = useState("");
+    [error, setError] = useState('');
   async function submit() {
     if (!email.trim()) {
-      setError("Bitte deine E-Mail-Adresse eingeben.");
+      setError('Bitte deine E-Mail-Adresse eingeben.');
       return;
     }
     setBusy(true);
-    setError("");
+    setError('');
     try {
       const result = await authClient.requestPasswordReset({
         email: email.trim(),

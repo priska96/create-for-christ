@@ -1,26 +1,27 @@
-import { API_PATH, MESSAGES } from "@create-for-christ/contracts";
-import { Redirect, router } from "expo-router";
-import { useState } from "react";
-import { Text } from "react-native";
-import { apiUrl, authClient, authError } from "../src/auth-client";
-import { ROUTE } from "../src/constants";
-import { Action, Field, Notice, Page, ui } from "../src/ui";
+import { API_PATH, MESSAGES } from '@create-for-christ/contracts';
+import { Redirect, router } from 'expo-router';
+import { useState } from 'react';
+import { Text } from 'react-native';
+import { apiUrl, authClient, authError } from '../src/auth-client';
+import { ROUTE } from '../src/constants';
+import { Action, Field, Notice, Page, ui } from '../src/ui';
+
 export default function SignIn() {
   const { data: session, isPending } = authClient.useSession();
-  const [email, setEmail] = useState(""),
-    [password, setPassword] = useState("");
+  const [email, setEmail] = useState(''),
+    [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false),
-    [message, setMessage] = useState(""),
-    [error, setError] = useState("");
+    [message, setMessage] = useState(''),
+    [error, setError] = useState('');
   if (session) return <Redirect href={ROUTE.home} />;
   async function login() {
     if (!email.trim() || !password) {
-      setError("Bitte E-Mail und Passwort ausfüllen.");
+      setError('Bitte E-Mail und Passwort ausfüllen.');
       return;
     }
     setBusy(true);
-    setError("");
-    setMessage("");
+    setError('');
+    setMessage('');
     try {
       const result = await authClient.signIn.email({
         email: email.trim(),
@@ -30,7 +31,7 @@ export default function SignIn() {
         setError(authError(result.error.code));
         return;
       }
-      setPassword("");
+      setPassword('');
       router.replace(ROUTE.home);
     } catch {
       setError(MESSAGES.connection);
@@ -40,12 +41,12 @@ export default function SignIn() {
   }
   async function resend() {
     if (!email.trim()) {
-      setError("Gib zuerst deine E-Mail-Adresse ein.");
+      setError('Gib zuerst deine E-Mail-Adresse ein.');
       return;
     }
     setBusy(true);
-    setError("");
-    setMessage("");
+    setError('');
+    setMessage('');
     try {
       const result = await authClient.sendVerificationEmail({
         email: email.trim(),
@@ -56,7 +57,7 @@ export default function SignIn() {
         return;
       }
       setMessage(
-        "Falls eine Bestätigung erforderlich ist, erhältst du einen neuen Link per E-Mail.",
+        'Falls eine Bestätigung erforderlich ist, erhältst du einen neuen Link per E-Mail.'
       );
     } catch {
       setError(MESSAGES.connection);

@@ -1,4 +1,4 @@
-import { StyleSheet } from "react-native";
+import { StyleSheet } from 'react-native';
 import {
   colors,
   fontSize,
@@ -7,15 +7,16 @@ import {
   lineHeight,
   radii,
   spacing,
-} from "./theme";
+} from './theme';
+
 export const ui = StyleSheet.create({
   fill: { flex: 1 },
-  multiline: { minHeight: layout.multilineHeight, textAlignVertical: "top" },
+  multiline: { minHeight: layout.multilineHeight, textAlignVertical: 'top' },
   safe: { flex: 1, backgroundColor: colors.background },
   page: {
-    width: "100%",
+    width: '100%',
     maxWidth: layout.pageWidth,
-    alignSelf: "center",
+    alignSelf: 'center',
     padding: spacing.xl,
     paddingBottom: spacing.pageBottom,
     gap: spacing.lg,
@@ -61,14 +62,14 @@ export const ui = StyleSheet.create({
     color: colors.primary,
     lineHeight: lineHeight.notice,
   },
-  row: { flexDirection: "row", gap: spacing.row },
+  row: { flexDirection: 'row', gap: spacing.row },
   chip: {
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.md,
     borderRadius: radii.control,
     flex: 1,
-    alignItems: "center",
+    alignItems: 'center',
   },
   selected: { backgroundColor: colors.selected, borderColor: colors.primary },
 });

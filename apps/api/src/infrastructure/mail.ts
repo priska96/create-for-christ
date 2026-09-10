@@ -1,8 +1,8 @@
-import { AUTH } from "@create-for-christ/contracts";
-import nodemailer from "nodemailer";
-import type pg from "pg";
-import { MAIL } from "../config/constants.js";
-import type { Config } from "../config/environment.js";
+import { AUTH } from '@create-for-christ/contracts';
+import nodemailer from 'nodemailer';
+import type pg from 'pg';
+import { MAIL } from '../config/constants.js';
+import type { Config } from '../config/environment.js';
 
 export type AuthMail = { to: string; subject: string; text: string };
 export type SendAuthMail = (mail: AuthMail) => Promise<void>;
@@ -20,8 +20,8 @@ export function createMailer(pool: pg.Pool, config: Config) {
   });
   const enqueue: SendAuthMail = async (mail) => {
     await pool.query(
-      "INSERT INTO auth_mail_outbox(recipient,subject,body) VALUES ($1,$2,$3)",
-      [mail.to, mail.subject, mail.text],
+      'INSERT INTO auth_mail_outbox(recipient,subject,body) VALUES ($1,$2,$3)',
+      [mail.to, mail.subject, mail.text]
     );
   };
   let timer: NodeJS.Timeout | undefined;
@@ -29,18 +29,18 @@ export function createMailer(pool: pg.Pool, config: Config) {
   async function deliver() {
     const client = await pool.connect();
     try {
-      await client.query("BEGIN");
+      await client.query('BEGIN');
       // Tokens expire after an hour. Never keep sensitive mail bodies indefinitely.
       await client.query(
         "DELETE FROM auth_mail_outbox WHERE created_at < now() - $1 * interval '1 second'",
-        [AUTH.tokenLifetimeSeconds],
+        [AUTH.tokenLifetimeSeconds]
       );
       const {
         rows: [mail],
       } = await client.query(
         `SELECT * FROM auth_mail_outbox WHERE available_at <= now() AND attempts < $1
         ORDER BY created_at LIMIT 1 FOR UPDATE SKIP LOCKED`,
-        [MAIL.maxAttempts],
+        [MAIL.maxAttempts]
       );
       if (mail) {
         try {
@@ -50,23 +50,23 @@ export function createMailer(pool: pg.Pool, config: Config) {
             subject: mail.subject,
             text: mail.body,
           });
-          await client.query("DELETE FROM auth_mail_outbox WHERE id=$1", [
+          await client.query('DELETE FROM auth_mail_outbox WHERE id=$1', [
             mail.id,
           ]);
         } catch {
           await client.query(
             "UPDATE auth_mail_outbox SET attempts=attempts+1,available_at=now()+$2 * interval '1 second' WHERE id=$1",
-            [mail.id, MAIL.retryDelaySeconds],
+            [mail.id, MAIL.retryDelaySeconds]
           );
           console.error(
-            "Auth email delivery failed; retry scheduled. Check SMTP configuration.",
+            'Auth email delivery failed; retry scheduled. Check SMTP configuration.'
           );
         }
       }
-      await client.query("COMMIT");
+      await client.query('COMMIT');
     } catch {
-      await client.query("ROLLBACK").catch(() => {});
-      console.error("Auth email worker failed. Check database/migrations.");
+      await client.query('ROLLBACK').catch(() => {});
+      console.error('Auth email worker failed. Check database/migrations.');
     } finally {
       client.release();
     }
@@ -78,7 +78,7 @@ export function createMailer(pool: pg.Pool, config: Config) {
       timer = setInterval(() => {
         if (!pending)
           pending = deliver()
-            .catch(() => console.error("Auth mail worker unavailable."))
+            .catch(() => console.error('Auth mail worker unavailable.'))
             .finally(() => {
               pending = undefined;
             });

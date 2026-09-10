@@ -1,6 +1,7 @@
-import { Button } from "@expo/ui";
-import { NativeControl } from "./native-control";
-import { layout, radii } from "./theme";
+import { Button } from '@expo/ui';
+import { NativeControl } from './NativeControl';
+import { layout, radii } from './theme';
+
 export function Action({
   children,
   onPress,
@@ -20,9 +21,9 @@ export function Action({
         label={busy ? `${children} …` : children}
         disabled={disabled || busy}
         onPress={onPress}
-        variant={secondary ? "outlined" : "filled"}
+        variant={secondary ? 'outlined' : 'filled'}
         style={{
-          width: "100%",
+          width: '100%',
           height: layout.controlHeight,
           borderRadius: radii.control,
         }}

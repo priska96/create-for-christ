@@ -3,11 +3,12 @@ import {
   type CampaignDetail,
   type CampaignInput,
   type CampaignStatus,
-} from "@create-for-christ/contracts";
-import type pg from "pg";
-import { transaction } from "../../infrastructure/transaction.js";
-import { deleteCampaignImage } from "./images.js";
-import { inputValues, mapRow, selectFields } from "./mapping.js";
+} from '@create-for-christ/contracts';
+import type pg from 'pg';
+import { transaction } from '../../infrastructure/transaction.js';
+import { deleteCampaignImage } from './images.js';
+import { inputValues, mapRow, selectFields } from './mapping.js';
+
 export class CampaignForbidden extends Error {}
 export class CampaignNotFound extends Error {}
 export class CampaignStateError extends Error {}
@@ -18,20 +19,20 @@ export interface CampaignStore {
   update(
     userId: string,
     campaignId: string,
-    input: CampaignInput,
+    input: CampaignInput
   ): Promise<CampaignDetail>;
   publish(userId: string, campaignId: string): Promise<CampaignDetail>;
   close(userId: string, campaignId: string): Promise<CampaignDetail>;
   setProductImage(
     userId: string,
     campaignId: string,
-    saveImage: () => Promise<string>,
+    saveImage: () => Promise<string>
   ): Promise<CampaignDetail>;
 }
 
 async function resolveBrandId(
   client: pg.PoolClient | pg.Pool,
-  userId: string,
+  userId: string
 ): Promise<string> {
   const {
     rows: [row],
@@ -41,31 +42,31 @@ async function resolveBrandId(
     JOIN profiles p ON p.id = a.profile_id
     JOIN brand_members bm ON bm.profile_id = p.id AND bm.role = 'owner'
     WHERE a.provider = 'better-auth' AND a.subject = $1`,
-    [userId],
+    [userId]
   );
-  if (!row) throw new CampaignForbidden("Kein Brand-Profil gefunden.");
+  if (!row) throw new CampaignForbidden('Kein Brand-Profil gefunden.');
   return row.brandId as string;
 }
 
 async function lockCampaign(
   client: pg.PoolClient,
   userId: string,
-  campaignId: string,
+  campaignId: string
 ) {
   const brandId = await resolveBrandId(client, userId);
   const {
     rows: [row],
   } = await client.query(
-    "SELECT status, product_image_url FROM campaigns WHERE id=$1 AND brand_id=$2 FOR UPDATE",
-    [campaignId, brandId],
+    'SELECT status, product_image_url FROM campaigns WHERE id=$1 AND brand_id=$2 FOR UPDATE',
+    [campaignId, brandId]
   );
-  if (!row) throw new CampaignNotFound("Kampagne nicht gefunden.");
+  if (!row) throw new CampaignNotFound('Kampagne nicht gefunden.');
   return row as { status: CampaignStatus; product_image_url: string | null };
 }
 function requireEditable(status: CampaignStatus) {
   if (status !== CAMPAIGN_STATUS.draft && status !== CAMPAIGN_STATUS.published)
     throw new CampaignStateError(
-      "Eine geschlossene Kampagne kann nicht bearbeitet werden.",
+      'Eine geschlossene Kampagne kann nicht bearbeitet werden.'
     );
 }
 export function createCampaignStore(pool: pg.Pool): CampaignStore {
@@ -73,21 +74,21 @@ export function createCampaignStore(pool: pg.Pool): CampaignStore {
     userId: string,
     campaignId: string,
     from: CampaignStatus,
-    to: CampaignStatus,
+    to: CampaignStatus
   ) {
     return transaction(pool, async (client) => {
       const existing = await lockCampaign(client, userId, campaignId);
       if (existing.status !== from)
         throw new CampaignStateError(
           to === CAMPAIGN_STATUS.published
-            ? "Nur Entwürfe können veröffentlicht werden."
-            : "Nur veröffentlichte Kampagnen können geschlossen werden.",
+            ? 'Nur Entwürfe können veröffentlicht werden.'
+            : 'Nur veröffentlichte Kampagnen können geschlossen werden.'
         );
       const {
         rows: [row],
       } = await client.query(
         `UPDATE campaigns AS c SET status=$1,updated_at=now() WHERE c.id=$2 RETURNING ${selectFields}`,
-        [to, campaignId],
+        [to, campaignId]
       );
       return mapRow(row);
     });
@@ -97,7 +98,7 @@ export function createCampaignStore(pool: pg.Pool): CampaignStore {
       const brandId = await resolveBrandId(pool, userId);
       const { rows } = await pool.query(
         `SELECT ${selectFields} FROM campaigns c WHERE c.brand_id=$1 ORDER BY c.created_at DESC,c.id DESC`,
-        [brandId],
+        [brandId]
       );
       return rows.map(mapRow);
     },
@@ -113,7 +114,7 @@ export function createCampaignStore(pool: pg.Pool): CampaignStore {
           required_mentions, min_posting_duration_days, usage_duration_days, usage_channels, usage_paid_ads_allowed
         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
         RETURNING ${selectFields}`,
-        [brandId, ...inputValues(input)],
+        [brandId, ...inputValues(input)]
       );
       return mapRow(row);
     },
@@ -131,7 +132,7 @@ export function createCampaignStore(pool: pg.Pool): CampaignStore {
             shipping_required=$12, shipping_notes=$13, required_mentions=$14, min_posting_duration_days=$15,
             usage_duration_days=$16, usage_channels=$17, usage_paid_ads_allowed=$18, updated_at=now()
           WHERE c.id=$19 RETURNING ${selectFields}`,
-          [...inputValues(input), campaignId],
+          [...inputValues(input), campaignId]
         );
         return mapRow(row);
       });
@@ -150,20 +151,20 @@ export function createCampaignStore(pool: pg.Pool): CampaignStore {
             rows: [row],
           } = await client.query(
             `UPDATE campaigns AS c SET product_image_url=$1,updated_at=now() WHERE c.id=$2 RETURNING ${selectFields}`,
-            [await saveImage(), campaignId],
+            [await saveImage(), campaignId]
           );
           return {
             result: mapRow(row),
             previousImage: existing.product_image_url,
           };
-        },
+        }
       );
       // Cleanup happens after commit and cannot invalidate a successful upload.
       if (previousImage) {
         try {
           await deleteCampaignImage(previousImage);
         } catch {
-          console.error("Old campaign image cleanup failed.");
+          console.error('Old campaign image cleanup failed.');
         }
       }
       return result;

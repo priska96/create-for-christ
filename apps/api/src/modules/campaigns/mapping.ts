@@ -3,7 +3,8 @@ import {
   DEAL,
   type CampaignDetail,
   type CampaignInput,
-} from "@create-for-christ/contracts";
+} from '@create-for-christ/contracts';
+
 export const selectFields = `
   c.id, c.status, c.title, c.product_name AS "productName", c.description,
   c.product_image_url AS "productImageUrl", c.currency,

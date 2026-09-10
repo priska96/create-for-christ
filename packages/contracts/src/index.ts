@@ -1,5 +1,5 @@
-export * from "./constants.js";
-import { z } from "zod";
+export * from './constants.js';
+import { z } from 'zod';
 import {
   APP,
   CAMPAIGN_STATUS,
@@ -7,7 +7,7 @@ import {
   IMAGE,
   LIMITS,
   ROLE,
-} from "./constants.js";
+} from './constants.js';
 
 export const dealTypeSchema = z.enum(DEAL);
 export const campaignSchema = z.object({
@@ -19,7 +19,7 @@ export const campaignSchema = z.object({
   description: z.string(),
   reelCount: z.number().int().positive(),
   currency: z.string().length(3),
-  compensation: z.discriminatedUnion("type", [
+  compensation: z.discriminatedUnion('type', [
     z.object({
       type: z.literal(DEAL.barter),
       productValueMinor: z.number().int().nonnegative().max(LIMITS.moneyMinor),
@@ -34,7 +34,7 @@ export const campaignListSchema = z.object({
   campaigns: z.array(campaignSchema),
 });
 export const healthSchema = z.object({
-  status: z.literal("ok"),
+  status: z.literal('ok'),
   service: z.literal(APP.service),
 });
 export type Campaign = z.infer<typeof campaignSchema>;
@@ -43,7 +43,7 @@ export type DealType = z.infer<typeof dealTypeSchema>;
 const shortText = z
   .string()
   .trim()
-  .min(1, "Bitte ausfüllen.")
+  .min(1, 'Bitte ausfüllen.')
   .max(LIMITS.shortText);
 const optionalText = z.string().trim().max(LIMITS.optionalText);
 const instagramReel = z
@@ -53,8 +53,8 @@ const instagramReel = z
     try {
       const url = new URL(value);
       return (
-        url.protocol === "https:" &&
-        ["instagram.com", "www.instagram.com"].includes(url.hostname) &&
+        url.protocol === 'https:' &&
+        ['instagram.com', 'www.instagram.com'].includes(url.hostname) &&
         /^\/reels?\/[A-Za-z0-9_-]+\/?$/.test(url.pathname) &&
         !url.username &&
         !url.password
@@ -62,7 +62,7 @@ const instagramReel = z
     } catch {
       return false;
     }
-  }, "Bitte einen Instagram-Reel-Link mit https:// angeben.");
+  }, 'Bitte einen Instagram-Reel-Link mit https:// angeben.');
 export const creatorProfileInput = z
   .object({
     role: z.literal(ROLE.creator),
@@ -71,16 +71,16 @@ export const creatorProfileInput = z
     instagramHandle: z
       .string()
       .trim()
-      .regex(/^[A-Za-z0-9._]{1,30}$/, "Instagram-Nutzername ohne @ oder URL."),
+      .regex(/^[A-Za-z0-9._]{1,30}$/, 'Instagram-Nutzername ohne @ oder URL.'),
     location: optionalText,
     languages: z
       .array(shortText)
-      .min(1, "Mindestens eine Sprache angeben.")
+      .min(1, 'Mindestens eine Sprache angeben.')
       .max(LIMITS.languages),
     topics: z.array(shortText).max(LIMITS.topics),
     dealPreferences: z
       .array(dealTypeSchema)
-      .min(1, "Mindestens eine Deal-Art wählen.")
+      .min(1, 'Mindestens eine Deal-Art wählen.')
       .max(Object.values(DEAL).length)
       .refine((values) => new Set(values).size === values.length),
     portfolioUrls: z.array(instagramReel).max(LIMITS.portfolioLinks),
@@ -93,24 +93,24 @@ export const brandProfileInput = z
     brandName: shortText,
     description: z.string().trim().max(LIMITS.brandDescription),
     website: z.union([
-      z.literal(""),
+      z.literal(''),
       z
         .url()
         .max(LIMITS.website)
         .refine((value) => {
           const url = new URL(value);
           return (
-            ["http:", "https:"].includes(url.protocol) &&
+            ['http:', 'https:'].includes(url.protocol) &&
             !url.username &&
             !url.password
           );
-        }, "Bitte eine gültige Website angeben."),
+        }, 'Bitte eine gültige Website angeben.'),
     ]),
     industry: shortText,
     location: optionalText,
   })
   .strict();
-export const profileInputSchema = z.discriminatedUnion("role", [
+export const profileInputSchema = z.discriminatedUnion('role', [
   creatorProfileInput,
   brandProfileInput,
 ]);
@@ -135,8 +135,8 @@ const isoDateTime = z.iso.datetime({ offset: true });
 const mentionHandle = z
   .string()
   .trim()
-  .regex(/^[A-Za-z0-9._-]{1,30}$/, "Instagram-Nutzername ohne @ angeben.");
-export const compensationInputSchema = z.discriminatedUnion("type", [
+  .regex(/^[A-Za-z0-9._-]{1,30}$/, 'Instagram-Nutzername ohne @ angeben.');
+export const compensationInputSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal(DEAL.barter),
     productValueMinor: z.number().int().nonnegative().max(LIMITS.moneyMinor),
@@ -154,14 +154,14 @@ export const campaignInputSchema = z
     description: z
       .string()
       .trim()
-      .min(1, "Bitte ein Reel-Briefing angeben.")
+      .min(1, 'Bitte ein Reel-Briefing angeben.')
       .max(LIMITS.campaignDescription),
     compensation: compensationInputSchema,
     currency: z
       .string()
       .trim()
       .toUpperCase()
-      .regex(/^[A-Z]{3}$/, "Bitte eine 3-stellige Währung angeben."),
+      .regex(/^[A-Z]{3}$/, 'Bitte eine 3-stellige Währung angeben.'),
     reelCount: z.number().int().positive().max(LIMITS.reels),
     reelLengthSeconds: z
       .number()
@@ -214,7 +214,7 @@ export const campaignImageInputSchema = z
       .min(1)
       .max(IMAGE.maxBase64Length)
       .regex(
-        /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/,
+        /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/
       ),
   })
   .strict();

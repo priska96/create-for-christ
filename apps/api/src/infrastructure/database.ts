@@ -1,7 +1,7 @@
-import type { Campaign, DealType } from "@create-for-christ/contracts";
-import { LIMITS } from "@create-for-christ/contracts";
-import pg from "pg";
-import { DATABASE } from "../config/constants.js";
+import type { Campaign, DealType } from '@create-for-christ/contracts';
+import { LIMITS } from '@create-for-christ/contracts';
+import pg from 'pg';
+import { DATABASE } from '../config/constants.js';
 
 export interface Database {
   ping(): Promise<void>;
@@ -10,7 +10,7 @@ export interface Database {
 }
 export function createDatabase(
   connectionString: string,
-  sharedPool?: pg.Pool,
+  sharedPool?: pg.Pool
 ): Database {
   const pool =
     sharedPool ??
@@ -20,10 +20,10 @@ export function createDatabase(
       connectionTimeoutMillis: DATABASE.connectionTimeoutMs,
       statement_timeout: DATABASE.statementTimeoutMs,
     });
-  pool.on("error", () => console.error("An idle database connection failed."));
+  pool.on('error', () => console.error('An idle database connection failed.'));
   return {
     async ping() {
-      await pool.query("SELECT 1");
+      await pool.query('SELECT 1');
     },
     async listCampaigns(dealType) {
       const { rows } = await pool.query(
@@ -39,7 +39,7 @@ export function createDatabase(
           AND ($1::text IS NULL OR c.deal_type = $1)
         ORDER BY c.created_at DESC, c.id DESC LIMIT $2
       `,
-        [dealType ?? null, LIMITS.discoveryPage],
+        [dealType ?? null, LIMITS.discoveryPage]
       );
       return rows as Campaign[];
     },

@@ -1,10 +1,11 @@
-import { Redirect } from "expo-router";
-import { ActivityIndicator } from "react-native";
-import { authClient } from "../src/auth-client";
-import { ROUTE } from "../src/constants";
-import { ProfileForm } from "../src/features/profiles/ProfileForm";
-import { Action, Notice, Page, SignOutAction } from "../src/ui";
-import { useMe } from "../src/use-me";
+import { Redirect } from 'expo-router';
+import { ActivityIndicator } from 'react-native';
+import { authClient } from '../src/auth-client';
+import { ROUTE } from '../src/constants';
+import { ProfileForm } from '../src/features/profiles/ProfileForm';
+import { Action, Notice, Page, SignOutAction } from '../src/ui';
+import { useMe } from '../src/use-me';
+
 export default function Profile() {
   const { data: session, isPending } = authClient.useSession();
   const state = useMe(session?.user.id);
@@ -31,7 +32,7 @@ export default function Profile() {
     );
   return (
     <ProfileForm
-      key={session.user.id + (state.me?.profile?.id ?? "new")}
+      key={session.user.id + (state.me?.profile?.id ?? 'new')}
       initial={state.me?.profile ?? null}
       name={session.user.name}
     />

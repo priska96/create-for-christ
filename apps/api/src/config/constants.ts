@@ -2,8 +2,8 @@ export const SERVER = {
   jsonBodyLimit: 256 * 1024,
   requestsPerMinute: 100,
   uploadRequestsPerMinute: 10,
-  rateWindow: "1 minute",
-  imageCacheControl: "public, max-age=3600",
+  rateWindow: '1 minute',
+  imageCacheControl: 'public, max-age=3600',
 } as const;
 export const DATABASE = {
   poolSize: 10,

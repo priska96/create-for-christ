@@ -8,20 +8,20 @@ import {
   MESSAGES,
   type CampaignDetail,
   type CampaignInput,
-} from "@create-for-christ/contracts";
-import * as ImagePicker from "expo-image-picker";
-import { router } from "expo-router";
-import { useState } from "react";
-import { Image, Text, View } from "react-native";
+} from '@create-for-christ/contracts';
+import * as ImagePicker from 'expo-image-picker';
+import { router } from 'expo-router';
+import { useState } from 'react';
+import { Image, Text, View } from 'react-native';
 import {
   ApiError,
   createCampaign,
   updateCampaign,
   uploadCampaignImage,
-} from "../../api";
-import { apiUrl } from "../../auth-client";
-import { DEAL_LABEL, MONEY, ROUTE } from "../../constants";
-import { fieldErrors, splitList } from "../../forms";
+} from '../../api';
+import { apiUrl } from '../../auth-client';
+import { DEAL_LABEL, MONEY, ROUTE } from '../../constants';
+import { fieldErrors, splitList } from '../../forms';
 import {
   Action,
   Check,
@@ -31,71 +31,72 @@ import {
   Page,
   SignOutAction,
   ui,
-} from "../../ui";
-import { layout, radii, spacing } from "../../ui/theme";
+} from '../../ui';
+import { layout, radii, spacing } from '../../ui/theme';
+
 export function CampaignForm({ initial }: { initial: CampaignDetail | null }) {
-  const [title, setTitle] = useState(initial?.title ?? "");
-  const [productName, setProductName] = useState(initial?.productName ?? "");
-  const [description, setDescription] = useState(initial?.description ?? "");
-  const [dealType, setDealType] = useState<"barter" | "paid">(
-    initial?.compensation.type ?? DEAL.barter,
+  const [title, setTitle] = useState(initial?.title ?? '');
+  const [productName, setProductName] = useState(initial?.productName ?? '');
+  const [description, setDescription] = useState(initial?.description ?? '');
+  const [dealType, setDealType] = useState<'barter' | 'paid'>(
+    initial?.compensation.type ?? DEAL.barter
   );
   const [productValue, setProductValue] = useState(
     initial?.compensation.type === DEAL.barter
       ? String(initial.compensation.productValueMinor / MONEY.minorPerUnit)
-      : "",
+      : ''
   );
   const [amountPerReel, setAmountPerReel] = useState(
     initial?.compensation.type === DEAL.paid
       ? String(initial.compensation.amountPerReelMinor / MONEY.minorPerUnit)
-      : "",
+      : ''
   );
   const [currency, setCurrency] = useState(
-    initial?.currency ?? MONEY.defaultCurrency,
+    initial?.currency ?? MONEY.defaultCurrency
   );
   const [reelCount, setReelCount] = useState(String(initial?.reelCount ?? 1));
   const [reelLengthSeconds, setReelLengthSeconds] = useState(
-    initial?.reelLengthSeconds ? String(initial.reelLengthSeconds) : "",
+    initial?.reelLengthSeconds ? String(initial.reelLengthSeconds) : ''
   );
   const [creatorSlots, setCreatorSlots] = useState(
-    String(initial?.creatorSlots ?? 1),
+    String(initial?.creatorSlots ?? 1)
   );
   const [contentDeadline, setContentDeadline] = useState(
-    initial?.contentDeadline?.slice(0, 10) ?? "",
+    initial?.contentDeadline?.slice(0, 10) ?? ''
   );
   const [shippingRequired, setShippingRequired] = useState(
-    initial?.shippingRequired ?? false,
+    initial?.shippingRequired ?? false
   );
   const [shippingNotes, setShippingNotes] = useState(
-    initial?.shippingNotes ?? "",
+    initial?.shippingNotes ?? ''
   );
   const [requiredMentions, setRequiredMentions] = useState(
-    initial?.requiredMentions.join(", ") ?? "",
+    initial?.requiredMentions.join(', ') ?? ''
   );
   const [minPostingDurationDays, setMinPostingDurationDays] = useState(
     initial?.minPostingDurationDays
       ? String(initial.minPostingDurationDays)
-      : "",
+      : ''
   );
   const [usageDurationDays, setUsageDurationDays] = useState(
-    initial?.usageDurationDays ? String(initial.usageDurationDays) : "",
+    initial?.usageDurationDays ? String(initial.usageDurationDays) : ''
   );
   const [usageChannels, setUsageChannels] = useState(
-    initial?.usageChannels.join(", ") ?? "",
+    initial?.usageChannels.join(', ') ?? ''
   );
   const [usagePaidAdsAllowed, setUsagePaidAdsAllowed] = useState(
-    initial?.usagePaidAdsAllowed ?? false,
+    initial?.usagePaidAdsAllowed ?? false
   );
   const [productImageUrl, setProductImageUrl] = useState(
-    initial?.productImageUrl ?? null,
+    initial?.productImageUrl ?? null
   );
   const [campaignId, setCampaignId] = useState(initial?.id ?? null);
 
   const [busy, setBusy] = useState(false),
-    [error, setError] = useState(""),
+    [error, setError] = useState(''),
     [fields, setFields] = useState<Record<string, string>>({});
   const [imageBusy, setImageBusy] = useState(false),
-    [imageError, setImageError] = useState("");
+    [imageError, setImageError] = useState('');
 
   function toNumber(value: string): number | null {
     const trimmed = value.trim();
@@ -103,7 +104,7 @@ export function CampaignForm({ initial }: { initial: CampaignDetail | null }) {
     return Number(trimmed);
   }
   function toMinor(value: string): number {
-    const normalized = value.trim().replace(",", ".");
+    const normalized = value.trim().replace(',', '.');
     return /^\d+(\.\d{1,2})?$/.test(normalized)
       ? Math.round(Number(normalized) * MONEY.minorPerUnit)
       : NaN;
@@ -111,7 +112,7 @@ export function CampaignForm({ initial }: { initial: CampaignDetail | null }) {
 
   async function submit() {
     if (busy || imageBusy || initial?.status === CAMPAIGN_STATUS.closed) return;
-    setError("");
+    setError('');
     setFields({});
     const input: CampaignInput = {
       title,
@@ -169,31 +170,31 @@ export function CampaignForm({ initial }: { initial: CampaignDetail | null }) {
     )
       return;
     setImageBusy(true);
-    setImageError("");
+    setImageError('');
     try {
       const picked = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ["images"],
+        mediaTypes: ['images'],
         quality: IMAGE.pickerQuality,
         allowsEditing: true,
         base64: true,
       });
       if (picked.canceled || !picked.assets[0]) return;
       const asset = picked.assets[0];
-      const mimeType = asset.mimeType ?? "image/jpeg";
+      const mimeType = asset.mimeType ?? 'image/jpeg';
       if (!asset.base64)
         throw new ApiError(
           HTTP.badRequest,
-          "Das Bild konnte nicht gelesen werden.",
+          'Das Bild konnte nicht gelesen werden.'
         );
       if (asset.base64.length > IMAGE.maxBase64Length)
         throw new ApiError(
           HTTP.payloadTooLarge,
-          "Das Bild darf höchstens 5 MB groß sein.",
+          'Das Bild darf höchstens 5 MB groß sein.'
         );
       if (!(IMAGE.mimeTypes as readonly string[]).includes(mimeType))
         throw new ApiError(
           HTTP.badRequest,
-          "Bitte ein JPEG-, PNG- oder WebP-Bild auswählen.",
+          'Bitte ein JPEG-, PNG- oder WebP-Bild auswählen.'
         );
       const updated = await uploadCampaignImage(campaignId, {
         mimeType,
@@ -204,7 +205,7 @@ export function CampaignForm({ initial }: { initial: CampaignDetail | null }) {
       setImageError(
         cause instanceof ApiError
           ? cause.message
-          : "Das Bild konnte nicht hochgeladen werden.",
+          : 'Das Bild konnte nicht hochgeladen werden.'
       );
     } finally {
       setImageBusy(false);
@@ -213,7 +214,7 @@ export function CampaignForm({ initial }: { initial: CampaignDetail | null }) {
 
   return (
     <Page
-      title={initial ? "Kampagne bearbeiten" : "Neue Kampagne"}
+      title={initial ? 'Kampagne bearbeiten' : 'Neue Kampagne'}
       subtitle="Titel, Produkt, Vergütung, Leistung und Bedingungen für deine Reel-Kooperation."
     >
       <Text style={ui.label}>Kampagne</Text>
@@ -249,7 +250,7 @@ export function CampaignForm({ initial }: { initial: CampaignDetail | null }) {
               accessibilityIgnoresInvertColors
               source={{ uri: `${apiUrl}${productImageUrl}` }}
               style={{
-                width: "100%",
+                width: '100%',
                 height: layout.previewHeight,
                 borderRadius: radii.image,
               }}
@@ -262,7 +263,7 @@ export function CampaignForm({ initial }: { initial: CampaignDetail | null }) {
             busy={imageBusy}
             onPress={() => void pickImage()}
           >
-            {productImageUrl ? "Produktbild ändern" : "Produktbild hochladen"}
+            {productImageUrl ? 'Produktbild ändern' : 'Produktbild hochladen'}
           </Action>
           <Notice message={imageError} error />
         </View>
@@ -410,7 +411,7 @@ export function CampaignForm({ initial }: { initial: CampaignDetail | null }) {
         disabled={imageBusy || initial?.status === CAMPAIGN_STATUS.closed}
         onPress={() => void submit()}
       >
-        {campaignId ? "Änderungen speichern" : "Als Entwurf speichern"}
+        {campaignId ? 'Änderungen speichern' : 'Als Entwurf speichern'}
       </Action>
       <Action
         secondary

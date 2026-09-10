@@ -1,37 +1,37 @@
-import type { CampaignDetail } from "@create-for-christ/contracts";
+import type { CampaignDetail } from '@create-for-christ/contracts';
 import {
   CAMPAIGN_STATUS,
   DEAL,
   MESSAGES,
   ROLE,
-} from "@create-for-christ/contracts";
-import { Redirect, router, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+} from '@create-for-christ/contracts';
+import { Redirect, router, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
   StyleSheet,
   Text,
   View,
-} from "react-native";
+} from 'react-native';
 import {
   ApiError,
   closeCampaign,
   getBrandCampaigns,
   publishCampaign,
-} from "../src/api";
-import { authClient } from "../src/auth-client";
-import { CAMPAIGN_STATUS_LABEL, ROUTE } from "../src/constants";
-import { Action, Notice, Page, SignOutAction, ui } from "../src/ui";
-import { colors, fontSize, fontWeight, radii, spacing } from "../src/ui/theme";
-import { useMe } from "../src/use-me";
+} from '../src/api';
+import { authClient } from '../src/auth-client';
+import { CAMPAIGN_STATUS_LABEL, ROUTE } from '../src/constants';
+import { Action, Notice, Page, SignOutAction, ui } from '../src/ui';
+import { colors, fontSize, fontWeight, radii, spacing } from '../src/ui/theme';
+import { useMe } from '../src/use-me';
 
 export default function BrandCampaigns() {
   const { data: session, isPending } = authClient.useSession();
   const state = useMe(session?.user.id);
   const [campaigns, setCampaigns] = useState<CampaignDetail[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
 
   useFocusEffect(
@@ -40,7 +40,7 @@ export default function BrandCampaigns() {
       let active = true;
       const controller = new AbortController();
       setLoading(true);
-      setError("");
+      setError('');
       getBrandCampaigns(controller.signal)
         .then((value) => {
           if (active) setCampaigns(value);
@@ -48,7 +48,7 @@ export default function BrandCampaigns() {
         .catch((cause) => {
           if (active)
             setError(
-              cause instanceof ApiError ? cause.message : MESSAGES.connection,
+              cause instanceof ApiError ? cause.message : MESSAGES.connection
             );
         })
         .finally(() => {
@@ -58,7 +58,7 @@ export default function BrandCampaigns() {
         active = false;
         controller.abort();
       };
-    }, [session?.user.id]),
+    }, [session?.user.id])
   );
 
   if (isPending)
@@ -86,15 +86,15 @@ export default function BrandCampaigns() {
   if (state.me.profile.details.role !== ROLE.brand)
     return <Redirect href={ROUTE.home} />;
 
-  async function transition(id: string, action: "publish" | "close") {
+  async function transition(id: string, action: 'publish' | 'close') {
     setBusyId(id);
-    setError("");
+    setError('');
     try {
-      const updated = await (action === "publish"
+      const updated = await (action === 'publish'
         ? publishCampaign(id)
         : closeCampaign(id));
       setCampaigns((list) =>
-        list.map((item) => (item.id === id ? updated : item)),
+        list.map((item) => (item.id === id ? updated : item))
       );
     } catch (cause) {
       setError(cause instanceof ApiError ? cause.message : MESSAGES.connection);
@@ -134,8 +134,8 @@ export default function BrandCampaigns() {
               </Text>
             </View>
             <Text style={ui.body}>
-              {campaign.productName} ·{" "}
-              {campaign.compensation.type === DEAL.barter ? "Barter" : "Paid"}
+              {campaign.productName} ·{' '}
+              {campaign.compensation.type === DEAL.barter ? 'Barter' : 'Paid'}
             </Text>
             <View style={ui.row}>
               <Pressable
@@ -150,33 +150,33 @@ export default function BrandCampaigns() {
               >
                 <Text style={ui.label}>
                   {campaign.status === CAMPAIGN_STATUS.closed
-                    ? "Ansehen"
-                    : "Bearbeiten"}
+                    ? 'Ansehen'
+                    : 'Bearbeiten'}
                 </Text>
               </Pressable>
               {campaign.status === CAMPAIGN_STATUS.draft && (
                 <Pressable
                   disabled={busyId !== null}
-                  onPress={() => void transition(campaign.id, "publish")}
+                  onPress={() => void transition(campaign.id, 'publish')}
                   style={ui.chip}
                 >
                   <Text style={ui.label}>
                     {busyId === campaign.id
-                      ? "Wird veröffentlicht …"
-                      : "Veröffentlichen"}
+                      ? 'Wird veröffentlicht …'
+                      : 'Veröffentlichen'}
                   </Text>
                 </Pressable>
               )}
               {campaign.status === CAMPAIGN_STATUS.published && (
                 <Pressable
                   disabled={busyId !== null}
-                  onPress={() => void transition(campaign.id, "close")}
+                  onPress={() => void transition(campaign.id, 'close')}
                   style={ui.chip}
                 >
                   <Text style={ui.label}>
                     {busyId === campaign.id
-                      ? "Wird geschlossen …"
-                      : "Schließen"}
+                      ? 'Wird geschlossen …'
+                      : 'Schließen'}
                   </Text>
                 </Pressable>
               )}
@@ -201,9 +201,9 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     gap: spacing.sm,
   },
   title: {

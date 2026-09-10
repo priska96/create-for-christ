@@ -1,15 +1,15 @@
-import cors from "@fastify/cors";
-import rateLimit from "@fastify/rate-limit";
-import Fastify from "fastify";
-import { SERVER } from "./config/constants.js";
-import type { AppOptions } from "./http/context.js";
-import { registerErrorHandler } from "./http/errors.js";
-import { createSessionGuard } from "./http/session.js";
-import { registerAuthRoutes } from "./modules/auth/routes.js";
-import { registerPublicCampaignRoutes } from "./modules/campaigns/public-routes.js";
-import { registerCampaignRoutes } from "./modules/campaigns/routes.js";
-import { registerHealthRoutes } from "./modules/health/routes.js";
-import { registerProfileRoutes } from "./modules/profiles/routes.js";
+import cors from '@fastify/cors';
+import rateLimit from '@fastify/rate-limit';
+import Fastify from 'fastify';
+import { SERVER } from './config/constants.js';
+import type { AppOptions } from './http/context.js';
+import { registerErrorHandler } from './http/errors.js';
+import { createSessionGuard } from './http/session.js';
+import { registerAuthRoutes } from './modules/auth/routes.js';
+import { registerPublicCampaignRoutes } from './modules/campaigns/public-routes.js';
+import { registerCampaignRoutes } from './modules/campaigns/routes.js';
+import { registerHealthRoutes } from './modules/health/routes.js';
+import { registerProfileRoutes } from './modules/profiles/routes.js';
 
 export function buildApp(options: AppOptions) {
   const app = Fastify({
@@ -19,14 +19,14 @@ export function buildApp(options: AppOptions) {
             req(request) {
               return {
                 method: request.method,
-                url: request.url?.split("?")[0],
+                url: request.url?.split('?')[0],
               };
             },
           },
           redact: [
-            "req.headers.cookie",
-            "req.headers.authorization",
-            "res.headers.set-cookie",
+            'req.headers.cookie',
+            'req.headers.authorization',
+            'res.headers.set-cookie',
           ],
         }
       : false,
@@ -35,13 +35,13 @@ export function buildApp(options: AppOptions) {
   app.register(cors, {
     origin: options.origins,
     credentials: true,
-    methods: ["GET", "POST", "PUT", "OPTIONS"],
+    methods: ['GET', 'POST', 'PUT', 'OPTIONS'],
   });
   app.register(rateLimit, {
     max: SERVER.requestsPerMinute,
     timeWindow: SERVER.rateWindow,
   });
-  app.addHook("onClose", async () => {
+  app.addHook('onClose', async () => {
     await options.beforeClose?.();
     await options.database.close();
   });

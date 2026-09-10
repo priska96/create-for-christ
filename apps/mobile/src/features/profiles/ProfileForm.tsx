@@ -6,13 +6,13 @@ import {
   ROLE,
   type OwnProfile,
   type ProfileInput,
-} from "@create-for-christ/contracts";
-import { router } from "expo-router";
-import { useState } from "react";
-import { Text, View } from "react-native";
-import { saveProfile } from "../../api";
-import { DEAL_LABEL, ROUTE } from "../../constants";
-import { fieldErrors, splitList } from "../../forms";
+} from '@create-for-christ/contracts';
+import { router } from 'expo-router';
+import { useState } from 'react';
+import { Text, View } from 'react-native';
+import { saveProfile } from '../../api';
+import { DEAL_LABEL, ROUTE } from '../../constants';
+import { fieldErrors, splitList } from '../../forms';
 import {
   Action,
   Check,
@@ -22,7 +22,8 @@ import {
   Page,
   SignOutAction,
   ui,
-} from "../../ui";
+} from '../../ui';
+
 export function ProfileForm({
   initial,
   name,
@@ -31,55 +32,55 @@ export function ProfileForm({
   name: string;
 }) {
   const details = initial?.details;
-  const [role, setRole] = useState<"creator" | "brand">(
-    details?.role ?? ROLE.creator,
+  const [role, setRole] = useState<'creator' | 'brand'>(
+    details?.role ?? ROLE.creator
   );
   const [displayName, setDisplayName] = useState(details?.displayName ?? name);
-  const [location, setLocation] = useState(details?.location ?? "");
+  const [location, setLocation] = useState(details?.location ?? '');
   const [bio, setBio] = useState(
-    details?.role === ROLE.creator ? details.bio : "",
+    details?.role === ROLE.creator ? details.bio : ''
   );
   const [instagram, setInstagram] = useState(
-    details?.role === ROLE.creator ? details.instagramHandle : "",
+    details?.role === ROLE.creator ? details.instagramHandle : ''
   );
   const [languages, setLanguages] = useState(
-    details?.role === ROLE.creator ? details.languages.join(", ") : "Deutsch",
+    details?.role === ROLE.creator ? details.languages.join(', ') : 'Deutsch'
   );
   const [topics, setTopics] = useState(
-    details?.role === ROLE.creator ? details.topics.join(", ") : "",
+    details?.role === ROLE.creator ? details.topics.join(', ') : ''
   );
   const [portfolio, setPortfolio] = useState(
-    details?.role === ROLE.creator ? details.portfolioUrls.join("\n") : "",
+    details?.role === ROLE.creator ? details.portfolioUrls.join('\n') : ''
   );
-  const [deals, setDeals] = useState<Array<"barter" | "paid">>(
+  const [deals, setDeals] = useState<Array<'barter' | 'paid'>>(
     details?.role === ROLE.creator
       ? details.dealPreferences
-      : ["barter", "paid"],
+      : ['barter', 'paid']
   );
   const [brandName, setBrandName] = useState(
-    details?.role === ROLE.brand ? details.brandName : "",
+    details?.role === ROLE.brand ? details.brandName : ''
   );
   const [description, setDescription] = useState(
-    details?.role === ROLE.brand ? details.description : "",
+    details?.role === ROLE.brand ? details.description : ''
   );
   const [website, setWebsite] = useState(
-    details?.role === ROLE.brand ? details.website : "",
+    details?.role === ROLE.brand ? details.website : ''
   );
   const [industry, setIndustry] = useState(
-    details?.role === ROLE.brand ? details.industry : "",
+    details?.role === ROLE.brand ? details.industry : ''
   );
   const [busy, setBusy] = useState(false),
-    [error, setError] = useState(""),
+    [error, setError] = useState(''),
     [fields, setFields] = useState<Record<string, string>>({});
-  function toggleDeal(deal: "barter" | "paid") {
+  function toggleDeal(deal: 'barter' | 'paid') {
     setDeals((values) =>
       values.includes(deal)
         ? values.filter((value) => value !== deal)
-        : [...values, deal],
+        : [...values, deal]
     );
   }
   async function submit() {
-    setError("");
+    setError('');
     setFields({});
 
     const input: ProfileInput =
@@ -88,12 +89,12 @@ export function ProfileForm({
             role,
             displayName,
             bio,
-            instagramHandle: instagram.replace(/^@/, ""),
+            instagramHandle: instagram.replace(/^@/, ''),
             location,
             languages: splitList(languages),
             topics: splitList(topics),
             dealPreferences: deals,
-            portfolioUrls: splitList(portfolio, "\n"),
+            portfolioUrls: splitList(portfolio, '\n'),
           }
         : {
             role,
@@ -116,9 +117,9 @@ export function ProfileForm({
       router.replace(ROUTE.home);
     } catch (cause) {
       setError(
-        cause instanceof Error && cause.name !== "AbortError"
+        cause instanceof Error && cause.name !== 'AbortError'
           ? cause.message
-          : MESSAGES.connection,
+          : MESSAGES.connection
       );
     } finally {
       setBusy(false);
@@ -126,11 +127,11 @@ export function ProfileForm({
   }
   return (
     <Page
-      title={initial ? "Dein Profil." : "Was möchtest du bewegen?"}
+      title={initial ? 'Dein Profil.' : 'Was möchtest du bewegen?'}
       subtitle={
         initial
-          ? "Halte deine Angaben aktuell."
-          : "Wähle deine Rolle und richte dein Profil ein. Die Rolle bleibt danach fest mit deinem Konto verbunden."
+          ? 'Halte deine Angaben aktuell.'
+          : 'Wähle deine Rolle und richte dein Profil ein. Die Rolle bleibt danach fest mit deinem Konto verbunden.'
       }
     >
       {!initial ? (
@@ -143,20 +144,20 @@ export function ProfileForm({
               onPress={() => setRole(value)}
               label={
                 value === ROLE.creator
-                  ? "Ich bin Creator"
-                  : "Ich bin eine Brand"
+                  ? 'Ich bin Creator'
+                  : 'Ich bin eine Brand'
               }
             />
           ))}
         </View>
       ) : (
         <Text style={ui.label}>
-          {role === ROLE.creator ? "Creator-Profil" : "Brand-Profil"}
+          {role === ROLE.creator ? 'Creator-Profil' : 'Brand-Profil'}
         </Text>
       )}
       <Field
         label={
-          role === ROLE.brand ? "Dein Name / Ansprechpartner" : "Dein Name"
+          role === ROLE.brand ? 'Dein Name / Ansprechpartner' : 'Dein Name'
         }
         value={displayName}
         onChangeText={setDisplayName}
@@ -283,7 +284,7 @@ export function ProfileForm({
       />
       <Notice message={error} error />
       <Action busy={busy} onPress={() => void submit()}>
-        {initial ? "Änderungen speichern" : "Profil erstellen"}
+        {initial ? 'Änderungen speichern' : 'Profil erstellen'}
       </Action>
       {initial && (
         <Action

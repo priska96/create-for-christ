@@ -1,4 +1,4 @@
-import { StyleSheet } from "react-native";
+import { StyleSheet } from 'react-native';
 import {
   colors,
   fontSize,
@@ -7,30 +7,31 @@ import {
   lineHeight,
   radii,
   spacing,
-} from "../../ui/theme";
+} from '../../ui/theme';
+
 export const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   container: {
-    width: "100%",
+    width: '100%',
     maxWidth: layout.discoveryWidth,
-    alignSelf: "center",
+    alignSelf: 'center',
     padding: spacing.xl,
     paddingBottom: spacing.bottom,
     gap: spacing.xl,
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.md,
-    flexWrap: "wrap",
+    flexWrap: 'wrap',
   },
   mark: {
     backgroundColor: colors.primary,
     width: layout.brandMark,
     height: layout.brandMark,
     borderRadius: radii.image,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   markText: {
     color: colors.white,
@@ -49,7 +50,7 @@ export const styles = StyleSheet.create({
     lineHeight: lineHeight.caption,
   },
   preview: {
-    marginLeft: "auto",
+    marginLeft: 'auto',
     backgroundColor: colors.border,
     padding: spacing.sm,
     borderRadius: radii.card,
@@ -61,7 +62,7 @@ export const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
   },
   roles: {
-    flexDirection: "row",
+    flexDirection: 'row',
     padding: spacing.xs,
     borderRadius: radii.image,
     backgroundColor: colors.notice,
@@ -69,7 +70,7 @@ export const styles = StyleSheet.create({
   role: {
     flex: 1,
     padding: spacing.choice,
-    alignItems: "center",
+    alignItems: 'center',
     borderRadius: radii.small,
   },
   roleActive: { backgroundColor: colors.primary },
@@ -94,7 +95,7 @@ export const styles = StyleSheet.create({
     lineHeight: lineHeight.intro,
     color: colors.muted,
   },
-  tags: { flexDirection: "row", gap: spacing.sm, flexWrap: "wrap" },
+  tags: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
   tag: {
     fontSize: fontSize.badge,
     color: colors.accent,
@@ -103,13 +104,13 @@ export const styles = StyleSheet.create({
     paddingVertical: spacing.tag,
     borderRadius: radii.card,
   },
-  sectionHeader: { flexDirection: "row", justifyContent: "space-between" },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between' },
   sectionTitle: {
     fontSize: fontSize.heading,
     color: colors.text,
     fontWeight: fontWeight.semibold,
   },
-  filters: { flexDirection: "row", gap: spacing.sm, marginTop: -spacing.row },
+  filters: { flexDirection: 'row', gap: spacing.sm, marginTop: -spacing.row },
   filter: {
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.card,
@@ -123,7 +124,7 @@ export const styles = StyleSheet.create({
   empty: {
     padding: spacing.empty,
     gap: spacing.lg,
-    alignItems: "center",
+    alignItems: 'center',
     backgroundColor: colors.surface,
     borderRadius: radii.panel,
     borderWidth: 1,
@@ -134,7 +135,7 @@ export const styles = StyleSheet.create({
     fontSize: fontSize.section,
     color: colors.text,
     fontWeight: fontWeight.semibold,
-    textAlign: "center",
+    textAlign: 'center',
   },
   body: {
     color: colors.muted,
@@ -168,7 +169,7 @@ export const styles = StyleSheet.create({
     marginTop: spacing.small,
   },
   how: { gap: spacing.steps, paddingTop: spacing.md },
-  step: { flexDirection: "row", gap: spacing.card },
+  step: { flexDirection: 'row', gap: spacing.card },
   stepNumber: {
     color: colors.accent,
     fontSize: fontSize.compact,
@@ -185,7 +186,7 @@ export const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: fontSize.micro,
     letterSpacing: spacing.trackingWide,
-    textAlign: "center",
+    textAlign: 'center',
     paddingTop: spacing.section,
   },
 });

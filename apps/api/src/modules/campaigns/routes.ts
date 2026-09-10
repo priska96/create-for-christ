@@ -7,22 +7,23 @@ import {
   HTTP,
   IMAGE,
   MESSAGES,
-} from "@create-for-christ/contracts";
-import type { FastifyInstance } from "fastify";
-import { SERVER } from "../../config/constants.js";
-import { RequestError } from "../../http/errors.js";
-import type { SessionGuard } from "../../http/session.js";
-import { campaignId, parseInput } from "../../http/validation.js";
+} from '@create-for-christ/contracts';
+import type { FastifyInstance } from 'fastify';
+import { SERVER } from '../../config/constants.js';
+import { RequestError } from '../../http/errors.js';
+import type { SessionGuard } from '../../http/session.js';
+import { campaignId, parseInput } from '../../http/validation.js';
 import {
   deleteCampaignImage,
   InvalidCampaignImage,
   saveCampaignImage,
-} from "./images.js";
-import type { CampaignStore } from "./store.js";
+} from './images.js';
+import type { CampaignStore } from './store.js';
+
 export function registerCampaignRoutes(
   app: FastifyInstance,
   campaigns: CampaignStore,
-  requireSession: SessionGuard,
+  requireSession: SessionGuard
 ) {
   app.get(API_PATH.brandCampaigns, async (request) => {
     const session = await requireSession(request, true);
@@ -35,8 +36,8 @@ export function registerCampaignRoutes(
     return campaignDetailSchema.parse(
       await campaigns.create(
         session.user.id,
-        parseInput(campaignInputSchema, request.body, MESSAGES.campaignInput),
-      ),
+        parseInput(campaignInputSchema, request.body, MESSAGES.campaignInput)
+      )
     );
   });
   app.put(API_PATH.campaign, async (request) => {
@@ -45,8 +46,8 @@ export function registerCampaignRoutes(
       await campaigns.update(
         session.user.id,
         campaignId(request.params),
-        parseInput(campaignInputSchema, request.body, MESSAGES.campaignInput),
-      ),
+        parseInput(campaignInputSchema, request.body, MESSAGES.campaignInput)
+      )
     );
   });
   for (const [path, transition] of [
@@ -56,7 +57,7 @@ export function registerCampaignRoutes(
     app.post(path, async (request) => {
       const session = await requireSession(request, true);
       return campaignDetailSchema.parse(
-        await transition(session.user.id, campaignId(request.params)),
+        await transition(session.user.id, campaignId(request.params))
       );
     });
   }
@@ -77,9 +78,9 @@ export function registerCampaignRoutes(
       const input = parseInput(
         campaignImageInputSchema,
         request.body,
-        MESSAGES.selectImage,
+        MESSAGES.selectImage
       );
-      const buffer = Buffer.from(input.data, "base64");
+      const buffer = Buffer.from(input.data, 'base64');
       if (buffer.byteLength > IMAGE.maxBytes)
         throw new RequestError(HTTP.payloadTooLarge, MESSAGES.imageTooLarge);
       let savedUrl: string | undefined;
@@ -88,7 +89,7 @@ export function registerCampaignRoutes(
           await campaigns.setProductImage(session.user.id, id, async () => {
             savedUrl = await saveCampaignImage(buffer);
             return savedUrl;
-          }),
+          })
         );
       } catch (error) {
         if (savedUrl) await deleteCampaignImage(savedUrl);
@@ -96,6 +97,6 @@ export function registerCampaignRoutes(
           throw new RequestError(HTTP.badRequest, error.message);
         throw error;
       }
-    },
+    }
   );
 }

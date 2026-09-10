@@ -1,12 +1,13 @@
-import type { Me } from "@create-for-christ/contracts";
-import { MESSAGES } from "@create-for-christ/contracts";
-import { useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
-import { ApiError, getMe } from "./api";
+import type { Me } from '@create-for-christ/contracts';
+import { MESSAGES } from '@create-for-christ/contracts';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { ApiError, getMe } from './api';
+
 export function useMe(userId?: string) {
   const [me, setMe] = useState<Me | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [version, setVersion] = useState(0);
   useFocusEffect(
     useCallback(() => {
@@ -19,7 +20,7 @@ export function useMe(userId?: string) {
       const controller = new AbortController();
       setMe(null);
       setLoading(true);
-      setError("");
+      setError('');
       getMe(controller.signal)
         .then((value) => {
           if (active) setMe(value);
@@ -27,7 +28,7 @@ export function useMe(userId?: string) {
         .catch((cause) => {
           if (active) {
             setError(
-              cause instanceof ApiError ? cause.message : MESSAGES.connection,
+              cause instanceof ApiError ? cause.message : MESSAGES.connection
             );
           }
         })
@@ -38,7 +39,7 @@ export function useMe(userId?: string) {
         active = false;
         controller.abort();
       };
-    }, [userId, version]),
+    }, [userId, version])
   );
   return {
     me,

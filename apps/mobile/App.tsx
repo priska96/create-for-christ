@@ -1,7 +1,7 @@
-import type { Campaign, DealType } from "@create-for-christ/contracts";
-import { DEAL, ROLE } from "@create-for-christ/contracts";
-import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import type { Campaign, DealType } from '@create-for-christ/contracts';
+import { DEAL, ROLE } from '@create-for-christ/contracts';
+import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -9,24 +9,24 @@ import {
   ScrollView,
   Text,
   View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { getCampaigns } from "./src/api";
-import { apiUrl } from "./src/auth-client";
-import { FILTER_ALL, MONEY, ROUTE, TIMEOUT } from "./src/constants";
-import { styles } from "./src/features/discovery/styles";
-import { colors, layout, radii } from "./src/ui/theme";
-import { useSignOut } from "./src/use-sign-out";
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { getCampaigns } from './src/api';
+import { apiUrl } from './src/auth-client';
+import { FILTER_ALL, MONEY, ROUTE, TIMEOUT } from './src/constants';
+import { styles } from './src/features/discovery/styles';
+import { colors, layout, radii } from './src/ui/theme';
+import { useSignOut } from './src/use-sign-out';
 
-type Role = "creator" | "brand";
+type Role = 'creator' | 'brand';
 const filters = [
-  { value: FILTER_ALL, label: "Alle Deals" },
-  { value: "barter", label: "Barter" },
-  { value: "paid", label: "Paid" },
+  { value: FILTER_ALL, label: 'Alle Deals' },
+  { value: 'barter', label: 'Barter' },
+  { value: 'paid', label: 'Paid' },
 ] as const;
 
 export default function App({
-  initialRole = "creator",
+  initialRole = 'creator',
   authenticated = false,
 }: {
   initialRole?: Role;
@@ -35,25 +35,25 @@ export default function App({
   const [role, setRole] = useState<Role>(initialRole);
   const { error: accountError, busy: signingOut, logout } = useSignOut();
   const [filter, setFilter] = useState<DealType | typeof FILTER_ALL>(
-    FILTER_ALL,
+    FILTER_ALL
   );
   const [reload, setReload] = useState(0);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [state, setState] = useState<"loading" | "ready" | "error">("loading");
+  const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
   useEffect(() => {
     const controller = new AbortController();
     let active = true;
     const timer = setTimeout(() => controller.abort(), TIMEOUT.discoveryMs);
-    setState("loading");
+    setState('loading');
     getCampaigns(filter, controller.signal)
       .then((data) => {
         if (active) {
           setCampaigns(data);
-          setState("ready");
+          setState('ready');
         }
       })
       .catch(() => {
-        if (active) setState("error");
+        if (active) setState('error');
       })
       .finally(() => clearTimeout(timer));
     return () => {
@@ -76,7 +76,7 @@ export default function App({
           </View>
           <View style={styles.preview}>
             <Text style={styles.previewText}>
-              {authenticated ? "MEIN KONTO" : "ENTDECKEN"}
+              {authenticated ? 'MEIN KONTO' : 'ENTDECKEN'}
             </Text>
           </View>
         </View>
@@ -84,11 +84,11 @@ export default function App({
         <View style={styles.tags}>
           <Pressable
             accessibilityRole="button"
-            onPress={() => router.push(authenticated ? "/profile" : "/sign-up")}
+            onPress={() => router.push(authenticated ? '/profile' : '/sign-up')}
             style={styles.button}
           >
             <Text style={styles.buttonText}>
-              {authenticated ? "Profil bearbeiten" : "Konto erstellen"}
+              {authenticated ? 'Profil bearbeiten' : 'Konto erstellen'}
             </Text>
           </Pressable>
           <Pressable
@@ -102,9 +102,9 @@ export default function App({
             <Text style={styles.filterText}>
               {authenticated
                 ? signingOut
-                  ? "Abmelden …"
-                  : "Abmelden"
-                : "Anmelden"}
+                  ? 'Abmelden …'
+                  : 'Abmelden'
+                : 'Anmelden'}
             </Text>
           </Pressable>
         </View>
@@ -129,7 +129,7 @@ export default function App({
                     role === value && styles.roleTextActive,
                   ]}
                 >
-                  {value === ROLE.creator ? "Für Creator" : "Für Brands"}
+                  {value === ROLE.creator ? 'Für Creator' : 'Für Brands'}
                 </Text>
               </Pressable>
             ))}
@@ -140,13 +140,13 @@ export default function App({
           <Text style={styles.eyebrow}>DEINE IDEEN. ECHTE VERBINDUNGEN.</Text>
           <Text style={styles.title}>
             {role === ROLE.creator
-              ? "Dein nächstes Reel.\nDeine nächste Chance."
-              : "Deine Brand.\nIhre Kreativität."}
+              ? 'Dein nächstes Reel.\nDeine nächste Chance.'
+              : 'Deine Brand.\nIhre Kreativität.'}
           </Text>
           <Text style={styles.intro}>
             {role === ROLE.creator
-              ? "Entdecke Brands, die zu dir passen. Kreiere Reels auf deinem Instagram-Kanal – für Produkte oder ein Honorar."
-              : "Finde Creator, die dein Produkt in einem Reel zum Leben erwecken. Mit einem Barter-Deal oder einem festen Honorar."}
+              ? 'Entdecke Brands, die zu dir passen. Kreiere Reels auf deinem Instagram-Kanal – für Produkte oder ein Honorar.'
+              : 'Finde Creator, die dein Produkt in einem Reel zum Leben erwecken. Mit einem Barter-Deal oder einem festen Honorar.'}
           </Text>
           <View style={styles.tags}>
             <Text style={styles.tag}>Nur Reels</Text>
@@ -183,12 +183,12 @@ export default function App({
                 </Pressable>
               ))}
             </View>
-            {state === "loading" ? (
+            {state === 'loading' ? (
               <View style={styles.empty}>
                 <ActivityIndicator color={colors.primary} />
                 <Text style={styles.body}>Kampagnen werden geladen …</Text>
               </View>
-            ) : state === "error" ? (
+            ) : state === 'error' ? (
               <View style={styles.empty} accessibilityLiveRegion="polite">
                 <Text style={styles.emptySymbol}>↻</Text>
                 <Text style={styles.emptyTitle}>Kurz keine Verbindung</Text>
@@ -217,7 +217,7 @@ export default function App({
               campaigns.map((campaign) => (
                 <View key={campaign.id} style={styles.card}>
                   <Text style={styles.eyebrow}>
-                    {campaign.brandName.toUpperCase()} ·{" "}
+                    {campaign.brandName.toUpperCase()} ·{' '}
                     {campaign.compensation.type.toUpperCase()}
                   </Text>
                   <Text style={styles.emptyTitle}>{campaign.title}</Text>
@@ -226,7 +226,7 @@ export default function App({
                       source={{ uri: `${apiUrl}${campaign.productImageUrl}` }}
                       accessibilityLabel={campaign.productName}
                       style={{
-                        width: "100%",
+                        width: '100%',
                         height: layout.imageHeight,
                         borderRadius: radii.image,
                       }}
@@ -279,19 +279,19 @@ export default function App({
           <Text style={styles.sectionTitle}>So kommen wir zusammen.</Text>
           {[
             [
-              "01",
-              "Entdecken",
-              "Die passende Brand und das passende Produkt finden.",
+              '01',
+              'Entdecken',
+              'Die passende Brand und das passende Produkt finden.',
             ],
             [
-              "02",
-              "Verbinden",
-              "Bewerben und nach der Zusage gemeinsam loslegen.",
+              '02',
+              'Verbinden',
+              'Bewerben und nach der Zusage gemeinsam loslegen.',
             ],
             [
-              "03",
-              "Kreieren",
-              "Dein Reel posten und den Instagram-Link einreichen.",
+              '03',
+              'Kreieren',
+              'Dein Reel posten und den Instagram-Link einreichen.',
             ],
           ].map(([number, title, body]) => (
             <View key={number} style={styles.step}>

@@ -1,16 +1,17 @@
-import { HTTP, MESSAGES } from "@create-for-christ/contracts";
-import type { FastifyInstance } from "fastify";
+import { HTTP, MESSAGES } from '@create-for-christ/contracts';
+import type { FastifyInstance } from 'fastify';
 import {
   CampaignForbidden,
   CampaignNotFound,
   CampaignStateError,
-} from "../modules/campaigns/store.js";
-import { ProfileConflict } from "../modules/profiles/store.js";
+} from '../modules/campaigns/store.js';
+import { ProfileConflict } from '../modules/profiles/store.js';
+
 export class RequestError extends Error {
   constructor(
     public statusCode: number,
     message: string,
-    public issues?: { path: string; message: string }[],
+    public issues?: { path: string; message: string }[]
   ) {
     super(message);
   }
@@ -30,16 +31,16 @@ export function registerErrorHandler(app: FastifyInstance) {
       return reply.code(HTTP.notFound).send({ error: error.message });
     const status =
       error instanceof Error &&
-      "statusCode" in error &&
-      typeof error.statusCode === "number"
+      'statusCode' in error &&
+      typeof error.statusCode === 'number'
         ? error.statusCode
         : HTTP.internalError;
-    request.log.error({ err: error }, "Request failed");
+    request.log.error({ err: error }, 'Request failed');
     return reply
       .code(
         status >= HTTP.badRequest && status < HTTP.internalError
           ? status
-          : HTTP.internalError,
+          : HTTP.internalError
       )
       .send({ error: MESSAGES.requestFailed });
   });

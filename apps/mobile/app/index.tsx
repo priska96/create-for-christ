@@ -1,11 +1,12 @@
-import { Redirect } from "expo-router";
-import { ActivityIndicator } from "react-native";
-import Discovery from "../App";
-import { authClient } from "../src/auth-client";
-import { ROUTE } from "../src/constants";
-import { Action, Notice, Page, SignOutAction } from "../src/ui";
-import { colors } from "../src/ui/theme";
-import { useMe } from "../src/use-me";
+import { Redirect } from 'expo-router';
+import { ActivityIndicator } from 'react-native';
+import Discovery from '../App';
+import { authClient } from '../src/auth-client';
+import { ROUTE } from '../src/constants';
+import { Action, Notice, Page, SignOutAction } from '../src/ui';
+import { colors } from '../src/ui/theme';
+import { useMe } from '../src/use-me';
+
 export default function Index() {
   const { data: session, isPending, error, refetch } = authClient.useSession();
   const profile = useMe(session?.user.id);

@@ -1,34 +1,35 @@
-import { API_PATH, AUTH, LIMITS, MESSAGES } from "@create-for-christ/contracts";
-import { Redirect, router } from "expo-router";
-import { useState } from "react";
-import { apiUrl, authClient, authError } from "../src/auth-client";
-import { ROUTE } from "../src/constants";
-import { Action, Field, Notice, Page } from "../src/ui";
+import { API_PATH, AUTH, LIMITS, MESSAGES } from '@create-for-christ/contracts';
+import { Redirect, router } from 'expo-router';
+import { useState } from 'react';
+import { apiUrl, authClient, authError } from '../src/auth-client';
+import { ROUTE } from '../src/constants';
+import { Action, Field, Notice, Page } from '../src/ui';
+
 export default function SignUp() {
   const { data: session } = authClient.useSession();
-  const [name, setName] = useState(""),
-    [email, setEmail] = useState(""),
-    [password, setPassword] = useState(""),
-    [confirm, setConfirm] = useState("");
+  const [name, setName] = useState(''),
+    [email, setEmail] = useState(''),
+    [password, setPassword] = useState(''),
+    [confirm, setConfirm] = useState('');
   const [busy, setBusy] = useState(false),
-    [error, setError] = useState(""),
+    [error, setError] = useState(''),
     [sent, setSent] = useState(false);
   if (session) return <Redirect href={ROUTE.home} />;
   async function submit() {
-    setError("");
+    setError('');
     if (!name.trim() || !email.trim()) {
-      setError("Bitte Name und E-Mail-Adresse ausfüllen.");
+      setError('Bitte Name und E-Mail-Adresse ausfüllen.');
       return;
     }
     if (
       password.length < AUTH.minPasswordLength ||
       password.length > AUTH.maxPasswordLength
     ) {
-      setError("Wähle ein Passwort mit 10 bis 128 Zeichen.");
+      setError('Wähle ein Passwort mit 10 bis 128 Zeichen.');
       return;
     }
     if (password !== confirm) {
-      setError("Die Passwörter stimmen nicht überein.");
+      setError('Die Passwörter stimmen nicht überein.');
       return;
     }
     setBusy(true);
@@ -43,8 +44,8 @@ export default function SignUp() {
         setError(authError(result.error.code));
         return;
       }
-      setPassword("");
-      setConfirm("");
+      setPassword('');
+      setConfirm('');
       setSent(true);
     } catch {
       setError(MESSAGES.connection);

@@ -1,7 +1,8 @@
-import { Checkbox } from "@expo/ui";
-import { Pressable, Text } from "react-native";
-import { NativeControl } from "./native-control";
-import { ui } from "./styles";
+import { Checkbox } from '@expo/ui';
+import { Pressable, Text } from 'react-native';
+import { NativeControl } from './NativeControl';
+import { ui } from './styles';
+
 type SelectionProps = {
   label: string;
   checked: boolean;

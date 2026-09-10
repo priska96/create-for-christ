@@ -3,15 +3,16 @@ import {
   MESSAGES,
   meSchema,
   profileInputSchema,
-} from "@create-for-christ/contracts";
-import type { FastifyInstance } from "fastify";
-import type { SessionGuard } from "../../http/session.js";
-import { parseInput } from "../../http/validation.js";
-import type { ProfileStore } from "./store.js";
+} from '@create-for-christ/contracts';
+import type { FastifyInstance } from 'fastify';
+import type { SessionGuard } from '../../http/session.js';
+import { parseInput } from '../../http/validation.js';
+import type { ProfileStore } from './store.js';
+
 export function registerProfileRoutes(
   app: FastifyInstance,
   profiles: ProfileStore,
-  requireSession: SessionGuard,
+  requireSession: SessionGuard
 ) {
   app.get(API_PATH.me, async (request) => {
     const session = await requireSession(request);
@@ -24,7 +25,7 @@ export function registerProfileRoutes(
     const session = await requireSession(request);
     return profiles.save(
       session.user.id,
-      parseInput(profileInputSchema, request.body, MESSAGES.profileInput),
+      parseInput(profileInputSchema, request.body, MESSAGES.profileInput)
     );
   });
 }

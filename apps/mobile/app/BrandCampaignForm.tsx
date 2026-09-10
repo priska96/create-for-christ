@@ -2,21 +2,21 @@ import {
   MESSAGES,
   ROLE,
   type CampaignDetail,
-} from "@create-for-christ/contracts";
+} from '@create-for-christ/contracts';
 import {
   Redirect,
   router,
   useFocusEffect,
   useLocalSearchParams,
-} from "expo-router";
-import { useCallback, useState } from "react";
-import { ActivityIndicator } from "react-native";
-import { ApiError, getBrandCampaigns } from "../src/api";
-import { authClient } from "../src/auth-client";
-import { ROUTE } from "../src/constants";
-import { CampaignForm } from "../src/features/campaigns/CampaignForm";
-import { Action, Notice, Page, SignOutAction } from "../src/ui";
-import { useMe } from "../src/use-me";
+} from 'expo-router';
+import { useCallback, useState } from 'react';
+import { ActivityIndicator } from 'react-native';
+import { ApiError, getBrandCampaigns } from '../src/api';
+import { authClient } from '../src/auth-client';
+import { ROUTE } from '../src/constants';
+import { CampaignForm } from '../src/features/campaigns/CampaignForm';
+import { Action, Notice, Page, SignOutAction } from '../src/ui';
+import { useMe } from '../src/use-me';
 
 export default function BrandCampaignForm() {
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -24,7 +24,7 @@ export default function BrandCampaignForm() {
   const state = useMe(session?.user.id);
   const [existing, setExisting] = useState<CampaignDetail | null>(null);
   const [loading, setLoading] = useState(Boolean(id));
-  const [loadError, setLoadError] = useState("");
+  const [loadError, setLoadError] = useState('');
 
   useFocusEffect(
     useCallback(() => {
@@ -35,13 +35,13 @@ export default function BrandCampaignForm() {
       let active = true;
       const controller = new AbortController();
       setLoading(true);
-      setLoadError("");
+      setLoadError('');
       getBrandCampaigns(controller.signal)
         .then((list) => {
           if (!active) return;
           const found = list.find((item) => item.id === id);
           if (!found) {
-            setLoadError("Kampagne nicht gefunden.");
+            setLoadError('Kampagne nicht gefunden.');
             return;
           }
           setExisting(found);
@@ -49,7 +49,7 @@ export default function BrandCampaignForm() {
         .catch((cause) => {
           if (active)
             setLoadError(
-              cause instanceof ApiError ? cause.message : MESSAGES.connection,
+              cause instanceof ApiError ? cause.message : MESSAGES.connection
             );
         })
         .finally(() => {
@@ -59,7 +59,7 @@ export default function BrandCampaignForm() {
         active = false;
         controller.abort();
       };
-    }, [id, session?.user.id]),
+    }, [id, session?.user.id])
   );
 
   if (isPending)
@@ -96,5 +96,5 @@ export default function BrandCampaignForm() {
       </Page>
     );
 
-  return <CampaignForm key={id ?? "new"} initial={existing} />;
+  return <CampaignForm key={id ?? 'new'} initial={existing} />;
 }

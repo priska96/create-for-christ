@@ -1,6 +1,7 @@
-import { Text, TextInput, View, type TextInputProps } from "react-native";
-import { ui } from "./styles";
-import { colors } from "./theme";
+import { Text, TextInput, View, type TextInputProps } from 'react-native';
+import { ui } from './styles';
+import { colors } from './theme';
+
 // Keep RN TextInput: Expo UI's current universal TextInput does not expose accessibilityLabel.
 export function Field({
   label,
