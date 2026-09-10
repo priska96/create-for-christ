@@ -1,3 +1,11 @@
+import type { CampaignDetail } from "@create-for-christ/contracts";
+import {
+  CAMPAIGN_STATUS,
+  DEAL,
+  MESSAGES,
+  ROLE,
+} from "@create-for-christ/contracts";
+import { Redirect, router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
@@ -6,23 +14,17 @@ import {
   Text,
   View,
 } from "react-native";
-import { Redirect, router, useFocusEffect } from "expo-router";
-import type { CampaignDetail } from "@create-for-christ/contracts";
-import { authClient } from "../src/auth-client";
-import { useMe } from "../src/use-me";
 import {
   ApiError,
   closeCampaign,
   getBrandCampaigns,
   publishCampaign,
 } from "../src/api";
+import { authClient } from "../src/auth-client";
+import { CAMPAIGN_STATUS_LABEL, ROUTE } from "../src/constants";
 import { Action, Notice, Page, SignOutAction, ui } from "../src/ui";
-
-const statusLabels: Record<CampaignDetail["status"], string> = {
-  draft: "Entwurf",
-  published: "Veröffentlicht",
-  closed: "Geschlossen",
-};
+import { colors, fontSize, fontWeight, radii, spacing } from "../src/ui/theme";
+import { useMe } from "../src/use-me";
 
 export default function BrandCampaigns() {
   const { data: session, isPending } = authClient.useSession();
@@ -30,12 +32,11 @@ export default function BrandCampaigns() {
   const [campaigns, setCampaigns] = useState<CampaignDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [version, setVersion] = useState(0);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
-      if (!session) return;
+      if (!session?.user.id) return;
       let active = true;
       const controller = new AbortController();
       setLoading(true);
@@ -47,9 +48,7 @@ export default function BrandCampaigns() {
         .catch((cause) => {
           if (active)
             setError(
-              cause instanceof ApiError
-                ? cause.message
-                : "Keine Verbindung. Bitte versuche es erneut.",
+              cause instanceof ApiError ? cause.message : MESSAGES.connection,
             );
         })
         .finally(() => {
@@ -59,7 +58,7 @@ export default function BrandCampaigns() {
         active = false;
         controller.abort();
       };
-    }, [session, version]),
+    }, [session?.user.id]),
   );
 
   if (isPending)
@@ -68,15 +67,24 @@ export default function BrandCampaigns() {
         <ActivityIndicator />
       </Page>
     );
-  if (!session) return <Redirect href="/sign-in" />;
+  if (!session) return <Redirect href={ROUTE.signIn} />;
   if (state.loading)
     return (
       <Page title="Deine Kampagnen">
         <ActivityIndicator />
       </Page>
     );
-  if (!state.me?.profile) return <Redirect href="/profile" />;
-  if (state.me.profile.details.role !== "brand") return <Redirect href="/" />;
+  if (state.error)
+    return (
+      <Page title="Kampagnen">
+        <Notice message={state.error} error />
+        <Action onPress={state.retry}>Erneut versuchen</Action>
+        <SignOutAction />
+      </Page>
+    );
+  if (!state.me?.profile) return <Redirect href={ROUTE.profile} />;
+  if (state.me.profile.details.role !== ROLE.brand)
+    return <Redirect href={ROUTE.home} />;
 
   async function transition(id: string, action: "publish" | "close") {
     setBusyId(id);
@@ -89,11 +97,7 @@ export default function BrandCampaigns() {
         list.map((item) => (item.id === id ? updated : item)),
       );
     } catch (cause) {
-      setError(
-        cause instanceof ApiError
-          ? cause.message
-          : "Keine Verbindung. Bitte versuche es erneut.",
-      );
+      setError(cause instanceof ApiError ? cause.message : MESSAGES.connection);
     } finally {
       setBusyId(null);
     }
@@ -104,7 +108,7 @@ export default function BrandCampaigns() {
       title="Deine Kampagnen"
       subtitle="Erstelle Entwürfe, veröffentliche sie für Creator und schließe sie bei Bedarf wieder."
     >
-      <Action onPress={() => router.push("/brand-campaign-form")}>
+      <Action onPress={() => router.push(ROUTE.campaignForm)}>
         Neue Kampagne
       </Action>
       <Notice message={error} error />
@@ -120,32 +124,41 @@ export default function BrandCampaigns() {
               <Text
                 style={[
                   styles.badge,
-                  campaign.status === "published" && styles.badgePublished,
-                  campaign.status === "closed" && styles.badgeClosed,
+                  campaign.status === CAMPAIGN_STATUS.published &&
+                    styles.badgePublished,
+                  campaign.status === CAMPAIGN_STATUS.closed &&
+                    styles.badgeClosed,
                 ]}
               >
-                {statusLabels[campaign.status]}
+                {CAMPAIGN_STATUS_LABEL[campaign.status]}
               </Text>
             </View>
             <Text style={ui.body}>
               {campaign.productName} ·{" "}
-              {campaign.compensation.type === "barter" ? "Barter" : "Paid"}
+              {campaign.compensation.type === DEAL.barter ? "Barter" : "Paid"}
             </Text>
             <View style={ui.row}>
               <Pressable
                 disabled={busyId !== null}
                 onPress={() =>
-                  router.push(`/brand-campaign-form?id=${campaign.id}`)
+                  router.push({
+                    pathname: ROUTE.campaignForm,
+                    params: { id: campaign.id },
+                  })
                 }
-                style={[ui.chip]}
+                style={ui.chip}
               >
-                <Text style={ui.label}>{campaign.status === "closed" ? "Ansehen" : "Bearbeiten"}</Text>
+                <Text style={ui.label}>
+                  {campaign.status === CAMPAIGN_STATUS.closed
+                    ? "Ansehen"
+                    : "Bearbeiten"}
+                </Text>
               </Pressable>
-              {campaign.status === "draft" && (
+              {campaign.status === CAMPAIGN_STATUS.draft && (
                 <Pressable
                   disabled={busyId !== null}
                   onPress={() => void transition(campaign.id, "publish")}
-                  style={[ui.chip]}
+                  style={ui.chip}
                 >
                   <Text style={ui.label}>
                     {busyId === campaign.id
@@ -154,11 +167,11 @@ export default function BrandCampaigns() {
                   </Text>
                 </Pressable>
               )}
-              {campaign.status === "published" && (
+              {campaign.status === CAMPAIGN_STATUS.published && (
                 <Pressable
                   disabled={busyId !== null}
                   onPress={() => void transition(campaign.id, "close")}
-                  style={[ui.chip]}
+                  style={ui.chip}
                 >
                   <Text style={ui.label}>
                     {busyId === campaign.id
@@ -171,7 +184,7 @@ export default function BrandCampaigns() {
           </View>
         ))
       )}
-      <Action secondary onPress={() => router.replace("/")}>
+      <Action secondary onPress={() => router.replace(ROUTE.home)}>
         Zurück
       </Action>
       <SignOutAction />
@@ -180,29 +193,34 @@ export default function BrandCampaigns() {
 }
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#FFFDF8",
-    borderRadius: 20,
-    padding: 18,
-    gap: 10,
+    backgroundColor: colors.surface,
+    borderRadius: radii.card,
+    padding: spacing.card,
+    gap: spacing.row,
     borderWidth: 1,
-    borderColor: "#E8E7DE",
+    borderColor: colors.border,
   },
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: 8,
+    gap: spacing.sm,
   },
-  title: { fontSize: 17, fontWeight: "700", color: "#203B30", flexShrink: 1 },
+  title: {
+    fontSize: fontSize.card,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+    flexShrink: 1,
+  },
   badge: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#71766A",
-    backgroundColor: "#EAEDE5",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
+    fontSize: fontSize.badge,
+    fontWeight: fontWeight.bold,
+    color: colors.muted,
+    backgroundColor: colors.notice,
+    paddingHorizontal: spacing.row,
+    paddingVertical: spacing.compact,
+    borderRadius: radii.small,
   },
-  badgePublished: { color: "#1F5C3D", backgroundColor: "#DDE8D5" },
-  badgeClosed: { color: "#5A5A5A", backgroundColor: "#E4E2DA" },
+  badgePublished: { color: colors.success, backgroundColor: colors.selected },
+  badgeClosed: { color: colors.muted, backgroundColor: colors.closed },
 });

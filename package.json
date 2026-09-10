@@ -22,10 +22,13 @@
     "test": "npm run build -w @create-for-christ/contracts && npm run test -w @create-for-christ/api",
     "check": "npm run typecheck && npm test && npm run build",
     "test:integration": "npm run build -w @create-for-christ/contracts && npm run test:integration -w @create-for-christ/api",
-    "setup": "node scripts/setup-env.mjs"
+    "setup": "node scripts/setup-env.mjs",
+    "format": "prettier --write \"apps/api/{src,test}/**/*.ts\" \"apps/mobile/{app,src}/**/*.{ts,tsx}\" apps/mobile/App.tsx \"packages/contracts/src/*.ts\"",
+    "format:check": "prettier --check \"apps/api/{src,test}/**/*.ts\" \"apps/mobile/{app,src}/**/*.{ts,tsx}\" apps/mobile/App.tsx \"packages/contracts/src/*.ts\""
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
+    "prettier": "^3.9.6",
     "typescript": "~6.0.3"
   }
 }

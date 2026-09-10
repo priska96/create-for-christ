@@ -1,6 +1,15 @@
+export * from "./constants.js";
 import { z } from "zod";
+import {
+  APP,
+  CAMPAIGN_STATUS,
+  DEAL,
+  IMAGE,
+  LIMITS,
+  ROLE,
+} from "./constants.js";
 
-export const dealTypeSchema = z.enum(["barter", "paid"]);
+export const dealTypeSchema = z.enum(DEAL);
 export const campaignSchema = z.object({
   id: z.uuid(),
   title: z.string(),
@@ -12,12 +21,12 @@ export const campaignSchema = z.object({
   currency: z.string().length(3),
   compensation: z.discriminatedUnion("type", [
     z.object({
-      type: z.literal("barter"),
-      productValueMinor: z.number().int().nonnegative().max(2_147_483_647),
+      type: z.literal(DEAL.barter),
+      productValueMinor: z.number().int().nonnegative().max(LIMITS.moneyMinor),
     }),
     z.object({
-      type: z.literal("paid"),
-      amountPerReelMinor: z.number().int().positive().max(2_147_483_647),
+      type: z.literal(DEAL.paid),
+      amountPerReelMinor: z.number().int().positive().max(LIMITS.moneyMinor),
     }),
   ]),
 });
@@ -26,16 +35,20 @@ export const campaignListSchema = z.object({
 });
 export const healthSchema = z.object({
   status: z.literal("ok"),
-  service: z.literal("create-for-christ-api"),
+  service: z.literal(APP.service),
 });
 export type Campaign = z.infer<typeof campaignSchema>;
 export type DealType = z.infer<typeof dealTypeSchema>;
 
-const shortText = z.string().trim().min(1, "Bitte ausfüllen.").max(100);
-const optionalText = z.string().trim().max(200);
+const shortText = z
+  .string()
+  .trim()
+  .min(1, "Bitte ausfüllen.")
+  .max(LIMITS.shortText);
+const optionalText = z.string().trim().max(LIMITS.optionalText);
 const instagramReel = z
   .url()
-  .max(500)
+  .max(LIMITS.reelUrl)
   .refine((value) => {
     try {
       const url = new URL(value);
@@ -52,9 +65,9 @@ const instagramReel = z
   }, "Bitte einen Instagram-Reel-Link mit https:// angeben.");
 export const creatorProfileInput = z
   .object({
-    role: z.literal("creator"),
+    role: z.literal(ROLE.creator),
     displayName: shortText,
-    bio: z.string().trim().max(1000),
+    bio: z.string().trim().max(LIMITS.creatorBio),
     instagramHandle: z
       .string()
       .trim()
@@ -63,27 +76,27 @@ export const creatorProfileInput = z
     languages: z
       .array(shortText)
       .min(1, "Mindestens eine Sprache angeben.")
-      .max(10),
-    topics: z.array(shortText).max(10),
+      .max(LIMITS.languages),
+    topics: z.array(shortText).max(LIMITS.topics),
     dealPreferences: z
       .array(dealTypeSchema)
       .min(1, "Mindestens eine Deal-Art wählen.")
-      .max(2)
+      .max(Object.values(DEAL).length)
       .refine((values) => new Set(values).size === values.length),
-    portfolioUrls: z.array(instagramReel).max(5),
+    portfolioUrls: z.array(instagramReel).max(LIMITS.portfolioLinks),
   })
   .strict();
 export const brandProfileInput = z
   .object({
-    role: z.literal("brand"),
+    role: z.literal(ROLE.brand),
     displayName: shortText,
     brandName: shortText,
-    description: z.string().trim().max(1500),
+    description: z.string().trim().max(LIMITS.brandDescription),
     website: z.union([
       z.literal(""),
       z
         .url()
-        .max(300)
+        .max(LIMITS.website)
         .refine((value) => {
           const url = new URL(value);
           return (
@@ -125,15 +138,15 @@ const mentionHandle = z
   .regex(/^[A-Za-z0-9._-]{1,30}$/, "Instagram-Nutzername ohne @ angeben.");
 export const compensationInputSchema = z.discriminatedUnion("type", [
   z.object({
-    type: z.literal("barter"),
-    productValueMinor: z.number().int().nonnegative().max(2_147_483_647),
+    type: z.literal(DEAL.barter),
+    productValueMinor: z.number().int().nonnegative().max(LIMITS.moneyMinor),
   }),
   z.object({
-    type: z.literal("paid"),
-    amountPerReelMinor: z.number().int().positive().max(2_147_483_647),
+    type: z.literal(DEAL.paid),
+    amountPerReelMinor: z.number().int().positive().max(LIMITS.moneyMinor),
   }),
 ]);
-export const campaignStatusSchema = z.enum(["draft", "published", "closed"]);
+export const campaignStatusSchema = z.enum(CAMPAIGN_STATUS);
 export const campaignInputSchema = z
   .object({
     title: shortText,
@@ -142,23 +155,38 @@ export const campaignInputSchema = z
       .string()
       .trim()
       .min(1, "Bitte ein Reel-Briefing angeben.")
-      .max(2000),
+      .max(LIMITS.campaignDescription),
     compensation: compensationInputSchema,
     currency: z
       .string()
       .trim()
       .toUpperCase()
       .regex(/^[A-Z]{3}$/, "Bitte eine 3-stellige Währung angeben."),
-    reelCount: z.number().int().positive().max(20),
-    reelLengthSeconds: z.number().int().positive().max(600).nullable(),
-    creatorSlots: z.number().int().positive().max(100),
+    reelCount: z.number().int().positive().max(LIMITS.reels),
+    reelLengthSeconds: z
+      .number()
+      .int()
+      .positive()
+      .max(LIMITS.reelSeconds)
+      .nullable(),
+    creatorSlots: z.number().int().positive().max(LIMITS.creatorSlots),
     contentDeadline: isoDateTime.nullable(),
     shippingRequired: z.boolean(),
-    shippingNotes: z.string().trim().max(500),
-    requiredMentions: z.array(mentionHandle).max(5),
-    minPostingDurationDays: z.number().int().positive().max(3650).nullable(),
-    usageDurationDays: z.number().int().positive().max(3650).nullable(),
-    usageChannels: z.array(shortText).max(5),
+    shippingNotes: z.string().trim().max(LIMITS.shippingNotes),
+    requiredMentions: z.array(mentionHandle).max(LIMITS.mentions),
+    minPostingDurationDays: z
+      .number()
+      .int()
+      .positive()
+      .max(LIMITS.durationDays)
+      .nullable(),
+    usageDurationDays: z
+      .number()
+      .int()
+      .positive()
+      .max(LIMITS.durationDays)
+      .nullable(),
+    usageChannels: z.array(shortText).max(LIMITS.usageChannels),
     usagePaidAdsAllowed: z.boolean(),
   })
   .strict();
@@ -180,8 +208,14 @@ export type CampaignStatus = z.infer<typeof campaignStatusSchema>;
 // Base64-encoded image data sent as JSON. Bounded well above the 5 MB decoded limit enforced server-side.
 export const campaignImageInputSchema = z
   .object({
-    mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]),
-    data: z.string().min(1).max(6_990_508).regex(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/),
+    mimeType: z.enum(IMAGE.mimeTypes),
+    data: z
+      .string()
+      .min(1)
+      .max(IMAGE.maxBase64Length)
+      .regex(
+        /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/,
+      ),
   })
   .strict();
 export type CampaignImageInput = z.infer<typeof campaignImageInputSchema>;

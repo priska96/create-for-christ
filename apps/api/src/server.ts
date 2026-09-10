@@ -1,16 +1,17 @@
 import pg from "pg";
-import { readConfig } from "./config.js";
-import { createDatabase } from "./database.js";
 import { buildApp } from "./app.js";
-import { createAuth } from "./auth.js";
-import { createMailer } from "./mail.js";
-import { createProfileStore } from "./profile-store.js";
-import { createCampaignStore } from "./campaign-store.js";
+import { DATABASE } from "./config/constants.js";
+import { readConfig } from "./config/environment.js";
+import { createDatabase } from "./infrastructure/database.js";
+import { createMailer } from "./infrastructure/mail.js";
+import { createAuth } from "./modules/auth/service.js";
+import { createCampaignStore } from "./modules/campaigns/store.js";
+import { createProfileStore } from "./modules/profiles/store.js";
 const config = readConfig();
 const pool = new pg.Pool({
   connectionString: config.DATABASE_URL,
-  max: 10,
-  connectionTimeoutMillis: 3000,
+  max: DATABASE.poolSize,
+  connectionTimeoutMillis: DATABASE.connectionTimeoutMs,
 });
 const mailer = createMailer(pool, config);
 const auth = createAuth(pool, config, mailer.enqueue);

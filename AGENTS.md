@@ -12,3 +12,8 @@
 - Accounts and own-profile onboarding/editing are implemented with Better Auth. Swiping and matching are not implemented yet.
 - Run npm run test:integration with local PostgreSQL for auth/profile changes. These tests use a temporary schema; never point tests at production.
 - Local auth emails go to Mailpit. Never expose auth tables or mail outbox contents through public APIs.
+
+- Keep app.ts limited to composition. Put API routes and persistence in modules/<feature>, shared HTTP guards in http/, and infrastructure in infrastructure/.
+- Reuse shared domain constants from contracts, operational constants from API config, and mobile design tokens from src/ui/theme.ts.
+- Reuse src/ui controls. Expo UI universal Buttons/Checkboxes are integrated; keep accessible React Native Fields until the universal TextInput exposes an equivalent accessible label.
+- Keep noUnusedLocals/noUnusedParameters enabled. Run npm run format:check; npm run format applies the agreed source formatting.

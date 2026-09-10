@@ -38,23 +38,30 @@ PostgreSQL wird nur an `127.0.0.1:5433` veröffentlicht, um bestehende lokale Da
 ## Struktur
 
 ```text
-apps/
-  mobile/             Expo-App und öffentliche API-Anbindung
-  api/
-    src/              Fastify-API, Datenbankzugriff, Konfiguration
-    migrations/       Versionierte SQL-Migrationen
-    test/             API-Verhalten und Fehlerfälle
-packages/
-  contracts/          Gemeinsame Zod-Schemas und TypeScript-Typen
-compose.yaml          Lokale PostgreSQL-Datenbank
-app-konzept.mdx       Konzept und dokumentierte Entscheidungen
+apps/api/src/
+  app.ts                    Serveraufbau und Registrierung der Module
+  config/                   Umgebungsvariablen und Betriebsgrenzen
+  http/                     Sitzungsprüfung, Validierung, Fehlerbehandlung
+  infrastructure/           PostgreSQL, Transaktionen und Mail-Outbox
+  modules/
+    auth/                   Auth-Adapter, Better Auth und Browserseiten
+    profiles/               Profil-Routen und Persistenz
+    campaigns/              Routen, Persistenz, Mapping und Bildspeicherung
+    health/                 Liveness und Readiness
+apps/mobile/
+  app/                      Expo-Router-Screens
+  src/api/                  HTTP-Client und typisierte API-Aufrufe
+  src/features/             Profil-/Kampagnenformulare und Discovery-Styles
+  src/ui/                   Gemeinsame Controls und Design-Tokens
+packages/contracts/src/     Gemeinsame Schemas, Typen und fachliche Konstanten
 ```
 
 ## Prüfungen
 
 ```sh
 npm run check
-npm run build
+npm run test:integration
+npm run format:check
 ```
 
 Die API-Tests benötigen keine laufende Datenbank. Migrationen werden mit `npm run db:migrate` auf die konfigurierte Datenbank angewendet. Bereits angewendete Migrationen werden nicht erneut ausgeführt; ihre Prüfsummen verhindern unbemerkte nachträgliche Änderungen. Neue Änderungen bekommen eine neue SQL-Datei.
@@ -118,3 +125,16 @@ Bodylose Aktionen (Veröffentlichen/Schließen) senden keinen JSON-Content-Type.
 Bilder liegen weiterhin lokal unter `apps/api/uploads/campaigns` (Start im API-Workspace); dieses Verzeichnis muss beim Deployment persistent gespeichert und gesichert werden. Bild-URLs sind öffentlich, auch bei Entwürfen, und daher nicht für vertrauliche Inhalte geeignet. Alte, bereits verwaiste Dateien werden nicht automatisch gelöscht. Bei einem Prozessabbruch zwischen Dateischreiben und Datenbank-Commit kann ebenfalls eine verwaiste Datei entstehen; ein periodischer Abgleich ist eine spätere Betriebsaufgabe.
 
 Regressionstests decken Bilddekodierung, Dateigrößen/Pixelgrenzen, manipulierte Dateien, Pfadzugriffe, Brand-Isolation, Veröffentlichung ohne Body und das Entfernen geschlossener Kampagnen aus dem Feed ab.
+
+
+## Codekonventionen und Expo UI
+
+Fachliche Werte (Rollen, Deal-Arten, Status, Passwort- und Upload-Grenzen, API-Pfade) liegen in `packages/contracts/src/constants.ts`. API-Betriebsgrenzen liegen in `apps/api/src/config/constants.ts`, mobile Routen/Timeouts in `apps/mobile/src/constants.ts`, Farben und Maße in `apps/mobile/src/ui/theme.ts`. Standardwerte von Konfigurationsschemas, SQL-Spaltennamen und einmalige UI-Texte bleiben in ihrem fachlichen Kontext. Angewendete SQL-Migrationen werden nicht für kosmetische Konstantenänderungen angefasst.
+
+Die API prüft Sitzungen zentral. Mutationen benötigen zusätzlich einen vertrauten Origin; GET-Abfragen benötigen keinen Origin-Header. Fachmodule prüfen weiterhin Eigentümerschaft in der Datenbank. Gemeinsame Transaktionsverwaltung übernimmt Commit, Rollback und das Freigeben der Verbindung.
+
+`@expo/ui` 57 wird über seine universelle API für Buttons und Checkboxen verwendet. Ein gemeinsamer Host setzt die Theme-Farbe und den hellen Modus. Expo UI nutzt auf iOS SwiftUI, auf Android Compose und im Browser Web-Komponenten; die Controls haben daher gemeinsame Farben, aber weiterhin plattformtypische Formen. Layout, Radio-Auswahl und Texteingaben bleiben gemeinsame React-Native-Komponenten. Insbesondere bietet der aktuelle universelle TextInput kein `accessibilityLabel`; `Field` erhält deshalb die vorhandenen zugänglichen Beschriftungen und Autofill-Einstellungen.
+
+Referenzen: [Expo UI Universal](https://docs.expo.dev/versions/v57.0.0/sdk/ui/universal/), [TextInput API](https://docs.expo.dev/versions/v57.0.0/sdk/ui/universal/textinput/).
+
+`noUnusedLocals` und `noUnusedParameters` sind in allen Workspaces aktiviert. `npm run format` vereinheitlicht die Quelltexte; `npm run format:check` prüft das Format. Bei einem eigenen nativen Development Build muss nach dem Hinzufügen von Expo UI der native Build erneuert werden.

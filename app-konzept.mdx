@@ -357,3 +357,10 @@ Bodylose Aktionen (Veröffentlichen/Schließen) senden keinen JSON-Content-Type.
 Bilder liegen weiterhin lokal unter `apps/api/uploads/campaigns` (Start im API-Workspace); dieses Verzeichnis muss beim Deployment persistent gespeichert und gesichert werden. Bild-URLs sind öffentlich, auch bei Entwürfen, und daher nicht für vertrauliche Inhalte geeignet. Alte, bereits verwaiste Dateien werden nicht automatisch gelöscht. Bei einem Prozessabbruch zwischen Dateischreiben und Datenbank-Commit kann ebenfalls eine verwaiste Datei entstehen; ein periodischer Abgleich ist eine spätere Betriebsaufgabe.
 
 Regressionstests decken Bilddekodierung, Dateigrößen/Pixelgrenzen, manipulierte Dateien, Pfadzugriffe, Brand-Isolation, Veröffentlichung ohne Body und das Entfernen geschlossener Kampagnen aus dem Feed ab.
+
+
+### Codeorganisation und UI (10. September 2026)
+
+Die Architektur bleibt Expo + Fastify + PostgreSQL. Die API ist in Fachmodule für Auth, Profile, Kampagnen und Health gegliedert; HTTP-Prüfungen und Infrastruktur sind getrennt. `app.ts` registriert diese Bausteine. Rollen, Deal-Arten, Statuswerte und fachliche Grenzen sind gemeinsam definiert; UI-Designwerte liegen in einem Theme.
+
+Expo UI wird für gemeinsame Buttons und Checkboxen eingesetzt. React-Native-Eingabefelder bleiben wegen ihrer zugänglichen Labels erhalten. Ein universeller Expo-UI-Host setzt gemeinsame Farben für Web, Android und iOS. Die konkrete Darstellung der nativen Controls bleibt plattformtypisch. Redundante Reload-Zustände, Logout-Logik, Transaktionsblöcke, Imports und Styles wurden bereinigt; TypeScript meldet ungenutzten Code künftig im regulären Check.

@@ -5,6 +5,7 @@
   "dependencies": {
     "@better-auth/expo": "^1.7.3",
     "@create-for-christ/contracts": "0.1.0",
+    "@expo/ui": "~57.0.17",
     "better-auth": "^1.7.3",
     "expo": "~57.0.21",
     "expo-constants": "~57.0.17",
