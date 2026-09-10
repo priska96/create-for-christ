@@ -78,8 +78,9 @@ Nach Änderungen an `packages/contracts` dessen Build neu starten; die gemeinsam
 - Brand-Profil mit Ansprechpartner, Brand-Name, Beschreibung, Website, Branche und Standort.
 - Eigene Profile laden und bearbeiten; IDs werden ausschließlich aus der geprüften Sitzung abgeleitet.
 - Öffentliche Kampagnenübersicht mit Barter-/Paid-Filtern.
+- Kampagnenverwaltung für Brands: Entwürfe erstellen und bearbeiten, Produktbild hochladen, veröffentlichen und schließen. Jede Brand sieht und ändert ausschließlich ihre eigenen Kampagnen; der Creator-Feed zeigt nur veröffentlichte, noch offene Kampagnen.
 
-Kampagnenverwaltung, Bewerbungs-Swipes, Matches, Chat, Versand und Reel-Abnahme sind weiterhin nicht implementiert. Profilbilder/Logos und automatische Instagram-Verifizierung folgen separat; der angegebene öffentliche Kanal wird noch nicht automatisch geprüft.
+Bewerbungs-Swipes, Matches, Chat, Versandabwicklung und Reel-Abnahme sind weiterhin nicht implementiert. Automatische Instagram-Verifizierung folgt separat; der angegebene öffentliche Kanal wird noch nicht automatisch geprüft. Produktbilder liegen lokal auf dem API-Server unter `apps/api/uploads/campaigns` und sind über unguessbare Dateinamen öffentlich abrufbar; das ist keine produktionsreife Medienablage.
 
 ## Authentifizierung lokal testen
 
@@ -108,3 +109,12 @@ Paketname und URL-Slug: `create-for-christ`. Anzeigename: **Create For Christ**.
 Typechecks, API-Tests und Backend-Build wurden erfolgreich ausgeführt. Die Auth-Integrationstests prüfen unbestätigte Accounts, idempotentes Onboarding, fremde Profil-IDs, Rollenwechsel, CSRF, Logout und einmalige Passwort-Resets mit Sitzungswiderruf. Expo-Bundles für iOS, Android und Web wurden erfolgreich exportiert; ein nativer Simulator-/Gerätetest ist noch nicht erfolgt. Die SQL-Migration wurde auf PostgreSQL 17 angewendet und ihre Wiederholbarkeit geprüft.
 
 Beim initialen npm audit wurden 13 moderate Meldungen innerhalb der Expo-Abhängigkeitsketten ausgewiesen, insbesondere uuid über xcode sowie decode-uri-component über query-string/Expo Router. Keine hohen oder kritischen Meldungen in diesem Prüfstand. Die vorgeschlagenen automatischen Major-Downgrades wurden nicht angewendet, da sie nicht zur gewählten Expo-Version passen. Vor Veröffentlichung erneut prüfen und kompatible Upstream-Korrekturen einspielen.
+
+
+### Kampagnen-Review (10. September 2026)
+
+Bodylose Aktionen (Veröffentlichen/Schließen) senden keinen JSON-Content-Type. Uploads sind auf 5 MiB und 25 Megapixel begrenzt; JPEG/PNG/WebP werden serverseitig dekodiert, ohne Metadaten als WebP mit maximal 1600 Pixel Kantenlänge gespeichert. Eigentümerschaft und Kampagnenstatus werden vor dem Speichern innerhalb einer Datenbanktransaktion geprüft. Fehlgeschlagene Uploads und ersetzte Bilder werden entfernt. Produktbilder erscheinen im Discovery-Feed.
+
+Bilder liegen weiterhin lokal unter `apps/api/uploads/campaigns` (Start im API-Workspace); dieses Verzeichnis muss beim Deployment persistent gespeichert und gesichert werden. Bild-URLs sind öffentlich, auch bei Entwürfen, und daher nicht für vertrauliche Inhalte geeignet. Alte, bereits verwaiste Dateien werden nicht automatisch gelöscht. Bei einem Prozessabbruch zwischen Dateischreiben und Datenbank-Commit kann ebenfalls eine verwaiste Datei entstehen; ein periodischer Abgleich ist eine spätere Betriebsaufgabe.
+
+Regressionstests decken Bilddekodierung, Dateigrößen/Pixelgrenzen, manipulierte Dateien, Pfadzugriffe, Brand-Isolation, Veröffentlichung ohne Body und das Entfernen geschlossener Kampagnen aus dem Feed ab.

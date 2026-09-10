@@ -8,8 +8,7 @@ App-Name: **Create For Christ**. Projektordner und Slug: `create-for-christ`.
 
 Gewählt ist eine eigene kleine Node.js-/TypeScript-API mit PostgreSQL und einer Expo-App. Supabase Self-Hosted und PocketBase werden nicht für die erste Implementierung eingesetzt. Ein späterer schrittweiser Wechsel zu Supabase bleibt möglich. Frühere Architekturvorschläge weiter unten dokumentieren den Entscheidungsverlauf und werden durch diesen Abschnitt ersetzt.
 
-Die Projektgrundlage verwendet npm Workspaces, Fastify, gemeinsame Zod-API-Verträge, versionierte SQL-Migrationen und PostgreSQL per Docker Compose. Die Expo-App bietet Registrierung, E-Mail-Bestätigung, Login/Logout, Passwort-Reset sowie einmaliges Onboarding und Bearbeitung eigener Creator-/Brand-Profile. Better Auth übernimmt die Authentifizierung; eigene Profil-Endpunkte prüfen die Sitzung und Eigentümerschaft serverseitig. Die Vorschau-Rollenwahl bleibt vom tatsächlichen Account getrennt. Kampagnenverwaltung und Bewerbungs-/Matching-Funktionen folgen als nächster Meilenstein. Die stabilen Profil-IDs sind von künftigen Auth-Anbietern getrennt.
-
+Die Projektgrundlage verwendet npm Workspaces, Fastify, gemeinsame Zod-API-Verträge, versionierte SQL-Migrationen und PostgreSQL per Docker Compose. Die Expo-App bietet Registrierung, E-Mail-Bestätigung, Login/Logout, Passwort-Reset sowie einmaliges Onboarding und Bearbeitung eigener Creator-/Brand-Profile. Better Auth übernimmt die Authentifizierung; eigene Profil-Endpunkte prüfen die Sitzung und Eigentümerschaft serverseitig. Die Vorschau-Rollenwahl bleibt vom tatsächlichen Account getrennt. Brands verwalten eigene Kampagnen als Entwurf, veröffentlicht oder geschlossen, einschließlich Produktbild-Upload; der Server beschränkt jede Änderung auf die eigene Brand, und der Creator-Feed zeigt ausschließlich veröffentlichte, noch offene Kampagnen. Bewerbungs-/Matching-Funktionen folgen als nächster Meilenstein. Die stabilen Profil-IDs sind von künftigen Auth-Anbietern getrennt.
 
 Dieses Dokument hält den bisherigen Brainstorming-Stand fest. Bestätigte Anforderungen sind von Vorschlägen und offenen Entscheidungen getrennt. Der App-Name wurde inzwischen als Create For Christ festgelegt.
 
@@ -31,10 +30,10 @@ Für den Start veröffentlichen Creator die Reels auf ihrem eigenen Instagram-Ka
 
 ### Zwei Vergütungsmodelle
 
-| Modell | Gegenleistung | Beschreibung |
-| --- | --- | --- |
-| Barter-Deal | Produkt gegen Reel | Der Creator erhält das zu bewerbende Produkt als Bezahlung. |
-| Paid-Deal | Geldbetrag pro Reel | Der Creator wird pro Reel bezahlt. |
+| Modell      | Gegenleistung       | Beschreibung                                                |
+| ----------- | ------------------- | ----------------------------------------------------------- |
+| Barter-Deal | Produkt gegen Reel  | Der Creator erhält das zu bewerbende Produkt als Bezahlung. |
+| Paid-Deal   | Geldbetrag pro Reel | Der Creator wird pro Reel bezahlt.                          |
 
 Barter-Deals sollen insbesondere auch kleinen Brands, die noch keine Einnahmen erzielen, einen Einstieg in Kooperationen ermöglichen. Für Creator und Unternehmen kann die Zusammenarbeit auf Produktbasis ein Einstieg sein.
 
@@ -215,32 +214,32 @@ Empfohlen wird ein modular aufgebautes Backend mit einer gemeinsamen PostgreSQL-
 
 ### Komponenten
 
-| Komponente | Vorschlag | Verantwortung |
-| --- | --- | --- |
-| Mobile App | Expo, React Native, TypeScript, Expo Router | Creator- und Brand-Oberflächen, Navigation, Swipe-Interaktion |
-| Backend-Plattform | Supabase | Authentifizierung, PostgreSQL, Storage, Realtime und serverseitige Funktionen |
-| Geschäftslogik | PostgreSQL-Funktionen für atomare Aktionen; Edge Functions für externe Dienste | Bewerben, Annehmen, Vereinbarungen bestätigen, Links einreichen |
-| Medien | Supabase Storage | Profilbilder, Logos und Produktbilder; zunächst keine Reel-Dateien |
-| Chat | Nachrichtentabelle und Supabase Realtime | Dauerhafte Nachrichten mit Echtzeitaktualisierung |
-| Benachrichtigungen | Datenbank-Outbox, Hintergrundverarbeitung und Expo Push Service | Neue Bewerbungen, Annahmen und Nachrichten |
-| Administration | Kleine geschützte Web-Oberfläche | Meldungen, Sperren, Kampagnenmoderation |
+| Komponente         | Vorschlag                                                                      | Verantwortung                                                                 |
+| ------------------ | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| Mobile App         | Expo, React Native, TypeScript, Expo Router                                    | Creator- und Brand-Oberflächen, Navigation, Swipe-Interaktion                 |
+| Backend-Plattform  | Supabase                                                                       | Authentifizierung, PostgreSQL, Storage, Realtime und serverseitige Funktionen |
+| Geschäftslogik     | PostgreSQL-Funktionen für atomare Aktionen; Edge Functions für externe Dienste | Bewerben, Annehmen, Vereinbarungen bestätigen, Links einreichen               |
+| Medien             | Supabase Storage                                                               | Profilbilder, Logos und Produktbilder; zunächst keine Reel-Dateien            |
+| Chat               | Nachrichtentabelle und Supabase Realtime                                       | Dauerhafte Nachrichten mit Echtzeitaktualisierung                             |
+| Benachrichtigungen | Datenbank-Outbox, Hintergrundverarbeitung und Expo Push Service                | Neue Bewerbungen, Annahmen und Nachrichten                                    |
+| Administration     | Kleine geschützte Web-Oberfläche                                               | Meldungen, Sperren, Kampagnenmoderation                                       |
 
 Die App liest freigegebene Daten mit dem Benutzer-Token und datenbankseitigen Zugriffsregeln. Einfache Profiländerungen können denselben Weg nutzen. Geschäftskritische Statuswechsel erfolgen ausschließlich über geprüfte Serveraktionen. Privilegierte Schlüssel gehören niemals in die App.
 
 ### Fachliche Module und Datenmodell
 
-| Modul | Wesentliche Tabellen | Zweck |
-| --- | --- | --- |
-| Accounts | profiles, creator_profiles | Identität, Creator-Angaben und Instagram-Referenzen |
-| Brands | brands, brand_members | Unternehmen und zugehörige Benutzer mit Berechtigungen |
-| Kampagnen | campaigns | Produkt, Briefing, Deal-Art, Vergütung, Fristen, Plätze und Status |
-| Entdecken | campaign_dismissals | Links-Swipes, damit verworfene Kampagnen nicht ständig erneut erscheinen |
-| Bewerbungen | applications | Creator bewirbt sich auf genau eine Kampagne |
-| Kooperationen | collaborations, agreement_versions, agreement_confirmations | Zusammenarbeit mit versionierter Vereinbarung und Bestätigungen beider Seiten |
-| Reels | reel_submissions | Ein Beitragslink pro geliefertem Reel, Zeitpunkt und Prüfstatus |
-| Chat | conversations, messages | Ein Gespräch pro Kooperation, Nachrichten und Lesestatus |
-| Versand | shipping_details | Private Lieferdaten, nur für die berechtigte Zusammenarbeit |
-| Betrieb | device_tokens, notification_outbox, reports, blocks, audit_events | Zustellung, Moderation und nachvollziehbare Änderungen |
+| Modul         | Wesentliche Tabellen                                              | Zweck                                                                         |
+| ------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Accounts      | profiles, creator_profiles                                        | Identität, Creator-Angaben und Instagram-Referenzen                           |
+| Brands        | brands, brand_members                                             | Unternehmen und zugehörige Benutzer mit Berechtigungen                        |
+| Kampagnen     | campaigns                                                         | Produkt, Briefing, Deal-Art, Vergütung, Fristen, Plätze und Status            |
+| Entdecken     | campaign_dismissals                                               | Links-Swipes, damit verworfene Kampagnen nicht ständig erneut erscheinen      |
+| Bewerbungen   | applications                                                      | Creator bewirbt sich auf genau eine Kampagne                                  |
+| Kooperationen | collaborations, agreement_versions, agreement_confirmations       | Zusammenarbeit mit versionierter Vereinbarung und Bestätigungen beider Seiten |
+| Reels         | reel_submissions                                                  | Ein Beitragslink pro geliefertem Reel, Zeitpunkt und Prüfstatus               |
+| Chat          | conversations, messages                                           | Ein Gespräch pro Kooperation, Nachrichten und Lesestatus                      |
+| Versand       | shipping_details                                                  | Private Lieferdaten, nur für die berechtigte Zusammenarbeit                   |
+| Betrieb       | device_tokens, notification_outbox, reports, blocks, audit_events | Zustellung, Moderation und nachvollziehbare Änderungen                        |
 
 Eine Brand besitzt viele Kampagnen; eine Kampagne erhält viele Bewerbungen. Pro Creator und Kampagne gibt es höchstens eine Bewerbung. Eine angenommene Bewerbung erzeugt genau eine Kooperation und einen Chat. Eine Kooperation kann mehrere Reel-Einreichungen besitzen.
 
@@ -308,7 +307,6 @@ Paid bedeutet im ersten Umfang ein vereinbartes Honorar; die Auszahlung kann au�
 - [Expo: Push-Benachrichtigungen einrichten](https://docs.expo.dev/push-notifications/push-notifications-setup/)
 - [Expo: Push-Nachrichten senden und Zustellfehler behandeln](https://docs.expo.dev/push-notifications/sending-notifications/)
 
-
 ## Open-Source-Alternativen zu PocketBase
 
 Der gewählte Stack bleibt Expo, Node.js/TypeScript und PostgreSQL. Als ergänzende Prüfung wurden folgende für Produktionsbetrieb ausgelegte Backend-Plattformen betrachtet. Produktionsreife ersetzt nicht sichere Konfiguration, Updates, Tests und Backups.
@@ -320,7 +318,6 @@ Der gewählte Stack bleibt Expo, Node.js/TypeScript und PostgreSQL. Als ergänze
 Empfehlung für das niedrige Budget bleibt vorerst die eigene modulare API mit gezielt ausgewählten Bibliotheken. Eine komplette Backend-Plattform ist keine Voraussetzung. Wenn viele fertige Backend-Funktionen gewünscht sind und PostgreSQL beibehalten werden soll, ist Supabase Self-Hosted der naheliegende Kandidat für eine gesonderte Evaluierung. Es wurde noch keine dieser Plattformen ausgewählt oder installiert.
 
 Quellen: [Supabase Self-Hosting](https://supabase.com/docs/guides/self-hosting/docker), [Appwrite Self-Hosting](https://appwrite.io/docs/advanced/self-hosting), [Appwrite Repository](https://github.com/appwrite/appwrite), [Parse Server Guide](https://docs.parseplatform.org/parse-server/guide/), [Parse Server Repository](https://github.com/parse-community/parse-server).
-
 
 ## Aktuelle Empfehlung: Supabase Self-Hosted als Infrastruktur
 
@@ -334,7 +331,6 @@ Self-Hosting spart das Cloud-Abonnement und Entwicklungsarbeit für Basisfunktio
 
 Quelle: [Supabase Docker und Ressourcenanforderungen](https://supabase.com/docs/guides/self-hosting/docker).
 
-
 ## Implementierter Meilenstein: Accounts und Profile
 
 Better Auth mit PostgreSQL verwaltet Benutzer, Passwort-Hashes, Sitzungen und Bestätigungen. Verifizierte Accounts richten ein Creator- oder Brand-Profil ein; diese Rolle bleibt beim Bearbeiten unverändert. Profile sind über getrennte Auth-Identitäten an stabile IDs gekoppelt. Profil-Endpunkte akzeptieren keine fremden Profil- oder Brand-IDs. Gleichzeitige Onboarding-Anfragen werden je Account serialisiert.
@@ -342,3 +338,22 @@ Better Auth mit PostgreSQL verwaltet Benutzer, Passwort-Hashes, Sitzungen und Be
 Creator geben Name, Instagram-Nutzername, Vorstellung, Sprachen, Themen, Standort, Deal-Präferenzen und bis zu fünf Instagram-Reel-Links an. Brands geben Ansprechpartner, Brand-Name, Beschreibung, Website, Branche und Standort an. Fotos/Logos und Reichweitenfelder sind noch nicht Bestandteil dieses Meilensteins.
 
 Bestätigungs- und Reset-Links sind eine Stunde gültig. Reset-Links sind nur einmal verwendbar; erfolgreiche Passwortänderung widerruft vorhandene Sitzungen. Die lokale Mailzustellung erfolgt über eine Datenbank-Outbox an Mailpit, ohne externe E-Mails. Für Produktion wird ein eigener SMTP-Anbieter konfiguriert. Native Sitzungen liegen in Expo SecureStore, Browser-Sitzungen in HttpOnly-Cookies.
+
+## Implementierter Meilenstein: Kampagnenverwaltung für Brands
+
+Eine Brand erstellt Kampagnen als Entwurf mit Titel, Produkt, Reel-Briefing, Vergütung, Leistung und Bedingungen. Die Vergütung ist entweder Barter mit Produktwert oder Paid mit Honorar pro Reel; beide Felder sind serverseitig durch die Deal-Art vorgegeben. Zur Leistung gehören Reel-Anzahl, optionale Reel-Länge, Veröffentlichungstermin und Anzahl gesuchter Creator. Zu den Bedingungen zählen Versandbedarf mit Hinweisen, erforderliche Instagram-Markierungen, Mindestdauer der Veröffentlichung sowie Nutzungsrechte mit Kanälen, Dauer und einer Freigabe für bezahlte Werbung.
+
+Ein Produktbild kann für einen bereits gespeicherten Entwurf hochgeladen werden. Bilder liegen lokal auf dem API-Server; die Datei-URL enthält eine zufällige, nicht erratbare ID. Das ist eine einfache Ablage für den aktuellen Umfang, kein Ersatz für eine produktionsreife Medienverwaltung mit Zugriffsregeln.
+
+Kampagnen durchlaufen die Zustände Entwurf, veröffentlicht und geschlossen. Nur Entwürfe können veröffentlicht und nur veröffentlichte Kampagnen geschlossen werden; geschlossene Kampagnen lassen sich nicht mehr bearbeiten. Jede schreibende Aktion prüft serverseitig, dass die angemeldete Brand Eigentümerin der Kampagne ist; fremde Kampagnen sind weder sichtbar noch änderbar. Der öffentliche Creator-Feed zeigt weiterhin ausschließlich veröffentlichte, noch offene Kampagnen.
+
+Bewerbungen, Swipes und die Annahme durch Brands sind der nächste Meilenstein.
+
+
+### Kampagnen-Review (10. September 2026)
+
+Bodylose Aktionen (Veröffentlichen/Schließen) senden keinen JSON-Content-Type. Uploads sind auf 5 MiB und 25 Megapixel begrenzt; JPEG/PNG/WebP werden serverseitig dekodiert, ohne Metadaten als WebP mit maximal 1600 Pixel Kantenlänge gespeichert. Eigentümerschaft und Kampagnenstatus werden vor dem Speichern innerhalb einer Datenbanktransaktion geprüft. Fehlgeschlagene Uploads und ersetzte Bilder werden entfernt. Produktbilder erscheinen im Discovery-Feed.
+
+Bilder liegen weiterhin lokal unter `apps/api/uploads/campaigns` (Start im API-Workspace); dieses Verzeichnis muss beim Deployment persistent gespeichert und gesichert werden. Bild-URLs sind öffentlich, auch bei Entwürfen, und daher nicht für vertrauliche Inhalte geeignet. Alte, bereits verwaiste Dateien werden nicht automatisch gelöscht. Bei einem Prozessabbruch zwischen Dateischreiben und Datenbank-Commit kann ebenfalls eine verwaiste Datei entstehen; ein periodischer Abgleich ist eine spätere Betriebsaufgabe.
+
+Regressionstests decken Bilddekodierung, Dateigrößen/Pixelgrenzen, manipulierte Dateien, Pfadzugriffe, Brand-Isolation, Veröffentlichung ohne Body und das Entfernen geschlossener Kampagnen aus dem Feed ab.
