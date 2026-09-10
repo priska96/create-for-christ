@@ -16,7 +16,7 @@ import {
 } from '@create-for-christ/contracts';
 import { FILTER_ALL } from '../constants';
 
-import { apiUrl } from '../auth-client';
+import { apiUrl } from '../authClient';
 import { authenticatedRequest } from './request';
 export { ApiError } from './request';
 

@@ -1,7 +1,7 @@
 import { API_PATH, MESSAGES } from '@create-for-christ/contracts';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { apiUrl, authClient, authError } from '../src/auth-client';
+import { apiUrl, authClient, authError } from '../src/authClient';
 import { ROUTE } from '../src/constants';
 import { Action, Field, Notice, Page } from '../src/ui';
 

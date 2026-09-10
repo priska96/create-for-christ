@@ -1,6 +1,6 @@
 import { Redirect } from 'expo-router';
 import { ActivityIndicator } from 'react-native';
-import { authClient } from '../src/auth-client';
+import { authClient } from '../src/authClient';
 import { ROUTE } from '../src/constants';
 import { ProfileForm } from '../src/features/profiles/ProfileForm';
 import { useMe } from '../src/hooks';

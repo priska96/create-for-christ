@@ -16,10 +16,11 @@ export default tseslint.config(
   },
   prettier,
   {
+    files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
       parserOptions: {
-        project: true, // or path like ['./tsconfig.json']
-        tsconfigRootDir: import.meta.dirname, //  Ensures the parser uses this file's folder as root
+        project: true,
+        tsconfigRootDir: import.meta.dirname,
       },
     },
   }

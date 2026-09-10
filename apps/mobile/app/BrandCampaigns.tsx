@@ -20,7 +20,7 @@ import {
   getBrandCampaigns,
   publishCampaign,
 } from '../src/api';
-import { authClient } from '../src/auth-client';
+import { authClient } from '../src/authClient';
 import { CAMPAIGN_STATUS_LABEL, ROUTE } from '../src/constants';
 import { useMe } from '../src/hooks';
 import { Action, Notice, Page, SignOutAction, ui } from '../src/ui';

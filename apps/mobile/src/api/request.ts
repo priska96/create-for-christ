@@ -1,6 +1,6 @@
 import { APP } from '@create-for-christ/contracts';
 import { Platform } from 'react-native';
-import { apiUrl, authClient } from '../auth-client';
+import { apiUrl, authClient } from '../authClient';
 import { TIMEOUT } from '../constants';
 
 export class ApiError extends Error {

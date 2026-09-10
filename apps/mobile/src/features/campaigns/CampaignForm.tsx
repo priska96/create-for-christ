@@ -19,7 +19,7 @@ import {
   updateCampaign,
   uploadCampaignImage,
 } from '../../api';
-import { apiUrl } from '../../auth-client';
+import { apiUrl } from '../../authClient';
 import { DEAL_LABEL, MONEY, ROUTE } from '../../constants';
 import { fieldErrors, splitList } from '../../forms';
 import {
