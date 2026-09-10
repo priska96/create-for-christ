@@ -12,7 +12,7 @@ import {
 import { useCallback, useState } from 'react';
 import { ActivityIndicator } from 'react-native';
 import { ApiError, getBrandCampaigns } from '../src/api';
-import { authClient } from '../src/auth-client';
+import { authClient } from '../src/authClient';
 import { ROUTE } from '../src/constants';
 import { CampaignForm } from '../src/features/campaigns/CampaignForm';
 import { useMe } from '../src/hooks';

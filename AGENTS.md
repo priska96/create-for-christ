@@ -17,3 +17,6 @@
 - Reuse shared domain constants from contracts, operational constants from API config, and mobile design tokens from src/ui/theme.ts.
 - Reuse src/ui controls. Expo UI universal Buttons/Checkboxes are integrated; keep accessible React Native Fields until the universal TextInput exposes an equivalent accessible label.
 - Keep noUnusedLocals/noUnusedParameters enabled. Run npm run format:check; npm run format applies the agreed source formatting.
+- Keep file names in camelCase.
+- Keep file names with capital first letter for component files.
+- Custom Hooks should be in the hooks directory.

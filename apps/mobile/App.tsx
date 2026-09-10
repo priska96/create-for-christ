@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getCampaigns } from './src/api';
-import { apiUrl } from './src/auth-client';
+import { apiUrl } from './src/authClient';
 import { FILTER_ALL, MONEY, ROUTE, TIMEOUT } from './src/constants';
 import { useSignOut } from './src/hooks';
 import { styles } from './src/features/discovery/styles';

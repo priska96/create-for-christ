@@ -1,7 +1,7 @@
 import { Redirect } from 'expo-router';
 import { ActivityIndicator } from 'react-native';
 import Discovery from '../App';
-import { authClient } from '../src/auth-client';
+import { authClient } from '../src/authClient';
 import { ROUTE } from '../src/constants';
 import { useMe } from '../src/hooks';
 import { Action, Notice, Page, SignOutAction } from '../src/ui';

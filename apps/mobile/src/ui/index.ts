@@ -1,7 +1,7 @@
-export { Action } from './action';
-export { Field } from './field';
-export { Notice } from './notice';
-export { Page } from './page';
-export { Check, Choice } from './selection';
+export { Action } from './Action';
+export { Field } from './Field';
+export { Notice } from './Notice';
+export { Page } from './Page';
+export { Check, Choice } from './Selection';
 export { SignOutAction } from './SignOutAction';
 export { ui } from './styles';

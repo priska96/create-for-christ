@@ -14,5 +14,13 @@ export default tseslint.config(
       ],
     },
   },
-  prettier
+  prettier,
+  {
+    languageOptions: {
+      parserOptions: {
+        project: true, // or path like ['./tsconfig.json']
+        tsconfigRootDir: import.meta.dirname, //  Ensures the parser uses this file's folder as root
+      },
+    },
+  }
 );
