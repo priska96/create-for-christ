@@ -1,3 +1,4 @@
+import { createApplicationStore } from './modules/applications/store.js';
 import pg from 'pg';
 import { buildApp } from './app.js';
 import { DATABASE } from './config/constants.js';
@@ -25,6 +26,7 @@ const app = buildApp({
   auth,
   profiles: createProfileStore(pool),
   campaigns: createCampaignStore(pool),
+  applications: createApplicationStore(pool),
   authBaseUrl: config.AUTH_BASE_URL,
   beforeClose: () => mailer.close(),
 });

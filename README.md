@@ -47,11 +47,12 @@ apps/api/src/
     auth/                   Auth-Adapter, Better Auth und Browserseiten
     profiles/               Profil-Routen und Persistenz
     campaigns/              Routen, Persistenz, Mapping und Bildspeicherung
+    applications/           Feed, Bewerbungen, Entscheidungen und Cursor-Paginierung
     health/                 Liveness und Readiness
 apps/mobile/
   app/                      Expo-Router-Screens
   src/api/                  HTTP-Client und typisierte API-Aufrufe
-  src/features/             Profil-/Kampagnenformulare und Discovery-Styles
+  src/features/             Profile, Kampagnen, Swipe-Feed und Bewerbungsansichten
   src/ui/                   Gemeinsame Controls und Design-Tokens
 packages/contracts/src/     Gemeinsame Schemas, Typen und fachliche Konstanten
 ```
@@ -64,7 +65,7 @@ npm run test:integration
 npm run format:check
 ```
 
-Die API-Tests benötigen keine laufende Datenbank. Migrationen werden mit `npm run db:migrate` auf die konfigurierte Datenbank angewendet. Bereits angewendete Migrationen werden nicht erneut ausgeführt; ihre Prüfsummen verhindern unbemerkte nachträgliche Änderungen. Neue Änderungen bekommen eine neue SQL-Datei.
+`npm test` benötigt keine laufende Datenbank; `npm run test:integration` benötigt lokales PostgreSQL. Migrationen werden mit `npm run db:migrate` auf die konfigurierte Datenbank angewendet. Bereits angewendete Migrationen werden nicht erneut ausgeführt; ihre Prüfsummen verhindern unbemerkte nachträgliche Änderungen. Neue Änderungen bekommen eine neue SQL-Datei.
 
 Für einen Bundle-Test:
 
@@ -87,7 +88,12 @@ Nach Änderungen an `packages/contracts` dessen Build neu starten; die gemeinsam
 - Öffentliche Kampagnenübersicht mit Barter-/Paid-Filtern.
 - Kampagnenverwaltung für Brands: Entwürfe erstellen und bearbeiten, Produktbild hochladen, veröffentlichen und schließen. Jede Brand sieht und ändert ausschließlich ihre eigenen Kampagnen; der Creator-Feed zeigt nur veröffentlichte, noch offene Kampagnen.
 
-Bewerbungs-Swipes, Matches, Chat, Versandabwicklung und Reel-Abnahme sind weiterhin nicht implementiert. Automatische Instagram-Verifizierung folgt separat; der angegebene öffentliche Kanal wird noch nicht automatisch geprüft. Produktbilder liegen lokal auf dem API-Server unter `apps/api/uploads/campaigns` und sind über unguessbare Dateinamen öffentlich abrufbar; das ist keine produktionsreife Medienablage.
+- Persönlicher Creator-Feed mit Deal-Präferenzen, Cursor-Paginierung und freien Kampagnenplätzen. Bereits beworbene oder übersprungene Kampagnen erscheinen nicht erneut.
+- Links swipen zum Überspringen; rechts swipen öffnet eine Bestätigung mit optionalem Pitch. Beide Aktionen sind auch per Button erreichbar.
+- Eigene Bewerbungen mit Statusfiltern; Brands prüfen pro Kampagne Creator-Profil, Reel-Portfolio, Pitch und gespeicherte Bedingungen.
+- Zusage/Absage mit Bestätigung. Eine Zusage erstellt atomar genau eine Kooperation (`negotiating`) und belegt einen Platz; doppelte Anfragen sind idempotent.
+
+Chat, beidseitige Vereinbarungsbestätigung, Versandabwicklung und Reel-Abnahme sind weiterhin nicht implementiert. Automatische Instagram-Verifizierung folgt separat; der angegebene öffentliche Kanal wird noch nicht automatisch geprüft. Produktbilder liegen lokal auf dem API-Server unter `apps/api/uploads/campaigns` und sind über unguessbare Dateinamen öffentlich abrufbar; das ist keine produktionsreife Medienablage.
 
 ## Authentifizierung lokal testen
 
@@ -103,11 +109,11 @@ Für Smartphone-Tests müssen `AUTH_BASE_URL` in `apps/api/.env` und `EXPO_PUBLI
 
 Better Auth verwaltet eigene Tabellen; `auth_identities` verknüpft dessen Benutzer mit stabilen Profil-IDs. Ein späterer Datenbank-/Auth-Wechsel bleibt getrennt planbar. Auth-Mails werden dauerhaft in `auth_mail_outbox` vorgemerkt, im Hintergrund an SMTP übergeben und nach Erfolg gelöscht. Fehlgeschlagene Zustellungen werden begrenzt wiederholt; nach einer Stunde werden verbleibende Inhalte entfernt. SMTP-Ausfälle werden ohne Empfänger oder Token geloggt. Das lokale Mailpit hat keine externen Empfänger.
 
-`npm run test:integration` prüft den Auth-Lebenszyklus gegen ein zufälliges, isoliertes PostgreSQL-Testschema, das danach gelöscht wird. Dafür muss die lokale Datenbank laufen; der Test-Benutzer benötigt Rechte zum Erstellen eines Schemas. Die Tests ändern keine bestehenden Nutzerprofile und versenden keine echten E-Mails.
+`npm run test:integration` prüft Auth-Lebenszyklus, Bewerbungen, Feed-Filter, Cursor-Paginierung, unveränderliche Bedingungen und parallele Platzvergabe gegen isolierte PostgreSQL-Testschemas, die danach gelöscht werden. Dafür muss die lokale Datenbank laufen; der Test-Benutzer benötigt Rechte zum Erstellen eines Schemas. Die Tests ändern keine bestehenden Nutzerprofile und versenden keine echten E-Mails.
 
 ## Vor einem öffentlichen Pilot
 
-Atomare Bewerbungsannahme und Platzvergabe implementieren; HTTPS und einen echten SMTP-Anbieter mit passendem Absender einrichten. Die lokalen Mailpit-Ports nicht öffentlich freigeben. Für einen Reverse Proxy müssen dessen vertrauenswürdige Adressen gezielt konfiguriert werden, damit die IP-basierten Limits korrekt greifen. Bei mehreren API-Instanzen einen gemeinsamen Rate-Limit-Speicher einrichten. Für den Server einen eingeschränkten Datenbankbenutzer verwenden, statt des lokalen Docker-Administrators. Datenbank und Dateien extern sichern und Wiederherstellung prüfen. Das Compose-Setup ist für lokale Entwicklung, keine fertige Produktionsbereitstellung.
+HTTPS und einen echten SMTP-Anbieter mit passendem Absender einrichten. Die lokalen Mailpit-Ports nicht öffentlich freigeben. Für einen Reverse Proxy müssen dessen vertrauenswürdige Adressen gezielt konfiguriert werden, damit die IP-basierten Limits korrekt greifen. Bei mehreren API-Instanzen einen gemeinsamen Rate-Limit-Speicher einrichten. Für den Server einen eingeschränkten Datenbankbenutzer verwenden, statt des lokalen Docker-Administrators. Datenbank und Dateien extern sichern und Wiederherstellung prüfen. Das Compose-Setup ist für lokale Entwicklung, keine fertige Produktionsbereitstellung.
 
 Paketname und URL-Slug: `create-for-christ`. Anzeigename: **Create For Christ**. Die technischen App-IDs `app.createforchrist.mobile` sind vor der Store-Veröffentlichung mit der tatsächlichen Organisation abzugleichen.
 
@@ -120,7 +126,7 @@ Beim initialen npm audit wurden 13 moderate Meldungen innerhalb der Expo-Abhäng
 
 ### Kampagnen-Review (10. September 2026)
 
-Bodylose Aktionen (Veröffentlichen/Schließen) senden keinen JSON-Content-Type. Uploads sind auf 5 MiB und 25 Megapixel begrenzt; JPEG/PNG/WebP werden serverseitig dekodiert, ohne Metadaten als WebP mit maximal 1600 Pixel Kantenlänge gespeichert. Eigentümerschaft und Kampagnenstatus werden vor dem Speichern innerhalb einer Datenbanktransaktion geprüft. Fehlgeschlagene Uploads und ersetzte Bilder werden entfernt. Produktbilder erscheinen im Discovery-Feed.
+Bodylose Aktionen (Veröffentlichen/Schließen) senden keinen JSON-Content-Type. Uploads sind auf 5 MiB und 25 Megapixel begrenzt; JPEG/PNG/WebP werden serverseitig dekodiert, ohne Metadaten als WebP mit maximal 1600 Pixel Kantenlänge gespeichert. Eigentümerschaft und Kampagnenstatus werden vor dem Speichern innerhalb einer Datenbanktransaktion geprüft. Fehlgeschlagene Uploads und nicht mehr referenzierte ersetzte Bilder werden entfernt. Bilder aus gespeicherten Bewerbungsbedingungen bleiben erhalten. Produktbilder erscheinen im Discovery-Feed.
 
 Bilder liegen weiterhin lokal unter `apps/api/uploads/campaigns` (Start im API-Workspace); dieses Verzeichnis muss beim Deployment persistent gespeichert und gesichert werden. Bild-URLs sind öffentlich, auch bei Entwürfen, und daher nicht für vertrauliche Inhalte geeignet. Alte, bereits verwaiste Dateien werden nicht automatisch gelöscht. Bei einem Prozessabbruch zwischen Dateischreiben und Datenbank-Commit kann ebenfalls eine verwaiste Datei entstehen; ein periodischer Abgleich ist eine spätere Betriebsaufgabe.
 
@@ -138,3 +144,27 @@ Die API prüft Sitzungen zentral. Mutationen benötigen zusätzlich einen vertra
 Referenzen: [Expo UI Universal](https://docs.expo.dev/versions/v57.0.0/sdk/ui/universal/), [TextInput API](https://docs.expo.dev/versions/v57.0.0/sdk/ui/universal/textinput/).
 
 `noUnusedLocals` und `noUnusedParameters` sind in allen Workspaces aktiviert. `npm run format` vereinheitlicht die Quelltexte; `npm run format:check` prüft das Format. Bei einem eigenen nativen Development Build muss nach dem Hinzufügen von Expo UI der native Build erneuert werden.
+
+
+## Bewerbungsablauf lokal testen
+
+Nach dem Update `npm run db:migrate` ausführen und API sowie Expo neu starten.
+
+1. Als Brand eine Kampagne mit Barter oder festem Honorar pro Reel veröffentlichen.
+2. Mit einem separaten Creator-Konto anmelden. Rechts swipen, optional einen Pitch angeben und die Bewerbung bestätigen; „Abbrechen“ sendet nichts.
+3. Unter „Meine Bewerbungen“ erscheint der Status „Offen“.
+4. Als Brand „Kampagnen verwalten“ → „Bewerbungen ansehen“ öffnen und zusagen oder ablehnen.
+5. Als Creator die Liste aktualisieren: Eine Zusage zeigt das Match, eine Absage den Status „Abgelehnt“.
+
+Neue Endpunkte: `GET /v1/creator/feed`, `POST /v1/creator/campaigns/:id/applications`, `POST /v1/creator/campaigns/:id/dismiss`, `GET /v1/creator/applications`, `GET /v1/brand/campaigns/:id/applications`, `POST /v1/brand/applications/:id/accept` und `/reject`. Die GET-Listen akzeptieren einen `cursor`, Bewerbungslisten zusätzlich `status`, der Feed `dealType` innerhalb der Profilpräferenzen. Private Antworten sind nicht cachebar.
+
+Migration `004_applications.sql` ergänzt dauerhafte Dismissals, Kampagnenrevisionen und unveränderliche Bedingungen für Bewerbungen/Kooperationen. Ändert sich eine Kampagne vor dem Absenden, muss der Creator die Bedingungen neu laden. Zusagen sperren zuerst die Kampagne und dann die Bewerbung; auch Kampagnenänderungen verwenden dieselbe Kampagnensperre. Die Platzanzahl lässt sich nicht unter die Zahl angenommener Bewerbungen reduzieren. Nach Schließen oder Ablauf einer Kampagne sind Zusagen gesperrt; offene Bewerbungen können weiterhin abgelehnt werden.
+
+Die Personalisierung berücksichtigt derzeit Deal-Präferenzen, Verfügbarkeit und bisherige Aktionen. Themen-/Sprachfilter, Blockierung, Zurückziehen von Bewerbungen, Preisverhandlungen und Push-Nachrichten sind noch nicht implementiert. Ein Match startet noch keinen beidseitig bestätigten Auftrag; Chat und Vereinbarungsbestätigung sind der nächste Meilenstein.
+
+
+### Prüfstand des Bewerbungsmeilensteins
+
+`npm run check`, `npm run test:integration` und `npm run format:check` sind erfolgreich. Die fünf API-/Upload-Tests und 15 Integrationstest-Einträge einschließlich der beiden übergeordneten Testfälle sind grün. Der Browser-Test mit getrennten Creator-/Brand-Sitzungen prüft echte Links-/Rechts-Gesten, Abbrechen ohne Bewerbung, veraltete Bedingungen, optionalen Pitch, einen fehlgeschlagenen Request mit Wiederholung, Zusage/Absage, Statusfilter und persistente Feed-Ausschlüsse. Dabei traten keine Browser-JavaScript-Fehler auf.
+
+Die aktuelle Expo-App wurde für Web, iOS und Android exportiert. Ein interaktiver Test auf einem nativen Gerät oder Simulator steht noch aus. Migration `004_applications.sql` ist auf der lokalen Entwicklungsdatenbank angewendet; bestehende Migrationen wurden nicht geändert. API und Expo nach dem Update neu starten.

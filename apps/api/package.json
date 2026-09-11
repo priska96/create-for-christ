@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test test/*.test.ts",
     "db:migrate": "tsx src/migrate.ts",
-    "test:integration": "tsx --test test/auth.integration.ts",
+    "test:integration": "tsx --test test/*.integration.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },

@@ -1,3 +1,4 @@
+import { registerApplicationRoutes } from './modules/applications/routes.js';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
@@ -57,6 +58,8 @@ export function buildApp(options: AppOptions) {
     const requireSession = createSessionGuard(authOptions);
     registerAuthRoutes(app, authOptions);
     registerProfileRoutes(app, options.profiles, requireSession);
+    if (options.applications)
+      registerApplicationRoutes(app, options.applications, requireSession);
     if (options.campaigns)
       registerCampaignRoutes(app, options.campaigns, requireSession);
   }

@@ -1,3 +1,4 @@
+import { ROLE } from '@create-for-christ/contracts';
 import { Redirect } from 'expo-router';
 import { ActivityIndicator } from 'react-native';
 import Discovery from '../App';
@@ -39,6 +40,8 @@ export default function Index() {
       </Page>
     );
   if (!profile.me?.profile) return <Redirect href={ROUTE.profile} />;
+  if (profile.me.profile.details.role === ROLE.creator)
+    return <Redirect href={ROUTE.creatorFeed} />;
   return (
     <Discovery
       key={session.user.id}

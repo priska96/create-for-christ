@@ -3,7 +3,10 @@ import type { Auth } from '../modules/auth/service.js';
 import type { CampaignStore } from '../modules/campaigns/store.js';
 import type { ProfileStore } from '../modules/profiles/store.js';
 
+import type { ApplicationStore } from '../modules/applications/store.js';
+
 export interface AppOptions {
+  applications?: ApplicationStore;
   database: Database;
   origins: string[];
   logger?: boolean;

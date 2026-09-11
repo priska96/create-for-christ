@@ -137,6 +137,17 @@ export default function BrandCampaigns() {
               {campaign.productName} ·{' '}
               {campaign.compensation.type === DEAL.barter ? 'Barter' : 'Paid'}
             </Text>
+            <Action
+              secondary
+              onPress={() =>
+                router.push({
+                  pathname: ROUTE.brandApplications,
+                  params: { id: campaign.id },
+                })
+              }
+            >
+              Bewerbungen ansehen
+            </Action>
             <View style={ui.row}>
               <Pressable
                 disabled={busyId !== null}

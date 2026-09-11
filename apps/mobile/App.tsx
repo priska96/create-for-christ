@@ -87,7 +87,9 @@ export default function App({
         <View style={styles.tags}>
           <Pressable
             accessibilityRole="button"
-            onPress={() => router.push(authenticated ? '/profile' : '/sign-up')}
+            onPress={() =>
+              router.push(authenticated ? ROUTE.profile : ROUTE.signUp)
+            }
             style={styles.button}
           >
             <Text style={styles.buttonText}>
@@ -160,6 +162,15 @@ export default function App({
 
         {role === ROLE.creator ? (
           <>
+            {!authenticated && (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => router.push(ROUTE.creatorFeed)}
+                style={styles.button}
+              >
+                <Text style={styles.buttonText}>Zum Creator-Feed</Text>
+              </Pressable>
+            )}
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Entdecke Kooperationen</Text>
             </View>
@@ -247,9 +258,8 @@ export default function App({
                     Instagram
                   </Text>
                   <Text style={styles.note}>
-                    Bewerbungen und Swipes folgen im nächsten
-                    Entwicklungsschritt. Du kannst die Kampagnen bereits
-                    ansehen.
+                    Melde dich mit deinem Creator-Profil an, um passende
+                    Kampagnen zu entdecken und dich zu bewerben.
                   </Text>
                 </View>
               ))

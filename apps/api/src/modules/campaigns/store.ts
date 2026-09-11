@@ -1,5 +1,7 @@
 import {
   CAMPAIGN_STATUS,
+  APPLICATION_MESSAGE,
+  APPLICATION_STATUS,
   type CampaignDetail,
   type CampaignInput,
   type CampaignStatus,
@@ -123,6 +125,14 @@ export function createCampaignStore(pool: pg.Pool): CampaignStore {
         const existing = await lockCampaign(client, userId, campaignId);
         requireEditable(existing.status);
         const {
+          rows: [capacity],
+        } = await client.query(
+          'SELECT count(*)::int AS occupied FROM applications WHERE campaign_id=$1 AND status=$2',
+          [campaignId, APPLICATION_STATUS.accepted]
+        );
+        if (input.creatorSlots < capacity.occupied)
+          throw new CampaignStateError(APPLICATION_MESSAGE.capacity);
+        const {
           rows: [row],
         } = await client.query(
           `
@@ -153,9 +163,14 @@ export function createCampaignStore(pool: pg.Pool): CampaignStore {
             `UPDATE campaigns AS c SET product_image_url=$1,updated_at=now() WHERE c.id=$2 RETURNING ${selectFields}`,
             [await saveImage(), campaignId]
           );
+          // Keep images referenced by immutable application terms.
+          const { rowCount: references } = await client.query(
+            "SELECT 1 FROM applications WHERE campaign_id=$1 AND campaign_snapshot->>'productImageUrl'=$2 LIMIT 1",
+            [campaignId, existing.product_image_url]
+          );
           return {
             result: mapRow(row),
-            previousImage: existing.product_image_url,
+            previousImage: references ? null : existing.product_image_url,
           };
         }
       );

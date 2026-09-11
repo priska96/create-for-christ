@@ -1,0 +1,176 @@
+import { DEAL, type DealType } from '@create-for-christ/contracts';
+import { router } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { ActivityIndicator, Text, View } from 'react-native';
+import {
+  applyToCampaign,
+  dismissCampaign,
+  getCreatorFeed,
+} from '../../api/applications';
+import { DEAL_LABEL, FILTER_ALL, ROUTE } from '../../constants';
+import { useMutation } from '../../hooks/useMutation';
+import { usePagedItems } from '../../hooks/usePagedItems';
+import { Action, Choice, Notice, Page, SignOutAction, ui } from '../../ui';
+import { CampaignBrief } from './CampaignBrief';
+import { ApplicationConfirmation } from './ApplicationConfirmation';
+import { SwipeCard } from './SwipeCard';
+import { styles } from './styles';
+
+export function CreatorFeed() {
+  const [filter, setFilter] = useState<DealType | typeof FILTER_ALL>(
+    FILTER_ALL
+  );
+  const [confirming, setConfirming] = useState(false);
+  const [pitch, setPitch] = useState('');
+  const [notice, setNotice] = useState('');
+  const mutation = useMutation();
+  const fetchPage = useCallback(
+    async (cursor: string | undefined, signal: AbortSignal) => {
+      const page = await getCreatorFeed(
+        { cursor, ...(filter === FILTER_ALL ? {} : { dealType: filter }) },
+        signal
+      );
+      return { items: page.campaigns, nextCursor: page.nextCursor };
+    },
+    [filter]
+  );
+  const page = usePagedItems(fetchPage);
+  const campaign = page.items[0];
+  function complete(message: string) {
+    page.setItems((items) => items.filter((item) => item.id !== campaign?.id));
+    setConfirming(false);
+    setPitch('');
+    setNotice(message);
+  }
+  function interested() {
+    setConfirming(true);
+    setNotice('');
+    mutation.clearError();
+  }
+  function dismiss() {
+    if (campaign)
+      void mutation.run(
+        () => dismissCampaign(campaign.id),
+        () => complete('Kampagne übersprungen.')
+      );
+  }
+  function reload() {
+    setConfirming(false);
+    setPitch('');
+    setNotice('');
+    mutation.clearError();
+    page.reload();
+  }
+  return (
+    <Page
+      title="Entdecke deine nächste Brand."
+      subtitle="Reels auf deinem Instagram-Kanal. Wähle die Kampagnen, die zu dir passen."
+    >
+      <Action secondary onPress={() => router.push(ROUTE.myApplications)}>
+        Meine Bewerbungen
+      </Action>
+      <View style={styles.filters}>
+        {[FILTER_ALL, ...Object.values(DEAL)].map((value) => (
+          <Choice
+            key={value}
+            label={
+              value === FILTER_ALL ? 'Alle' : DEAL_LABEL[value as DealType]
+            }
+            checked={filter === value}
+            disabled={mutation.busy || confirming}
+            onPress={() => {
+              setFilter(value as typeof filter);
+              setNotice('');
+              mutation.clearError();
+            }}
+          />
+        ))}
+      </View>
+      <Text style={ui.body}>
+        Deine Deal-Präferenzen aus dem Profil werden berücksichtigt.
+      </Text>
+      <Notice message={notice} />
+      <Notice error message={confirming ? '' : mutation.error || page.error} />
+      {page.loading && <ActivityIndicator />}
+      {campaign && !page.loading && (
+        <>
+          <SwipeCard
+            key={campaign.id}
+            disabled={mutation.busy || confirming}
+            onInterested={interested}
+            onDismiss={dismiss}
+          >
+            <View style={styles.card}>
+              <CampaignBrief campaign={campaign} />
+              <Text style={ui.label}>
+                {campaign.remainingSlots} freie Plätze
+              </Text>
+            </View>
+          </SwipeCard>
+          <Action disabled={mutation.busy || confirming} onPress={interested}>
+            Bewerben
+          </Action>
+          <Action
+            secondary
+            busy={mutation.busy}
+            disabled={confirming}
+            onPress={dismiss}
+          >
+            Nicht interessiert
+          </Action>
+          <ApplicationConfirmation
+            campaign={campaign}
+            visible={confirming}
+            pitch={pitch}
+            busy={mutation.busy}
+            error={mutation.error}
+            onPitchChange={setPitch}
+            onCancel={() => {
+              setConfirming(false);
+              mutation.clearError();
+            }}
+            onSubmit={() =>
+              void mutation.run(
+                () =>
+                  applyToCampaign(campaign.id, {
+                    pitch,
+                    campaignVersion: campaign.version,
+                  }),
+                () =>
+                  complete(
+                    'Bewerbung gesendet. Die Brand kann dir jetzt zusagen.'
+                  )
+              )
+            }
+            onReload={reload}
+          />
+        </>
+      )}
+      {!campaign && !page.loading && !page.error && (
+        <Notice
+          message={
+            page.nextCursor
+              ? 'Diese Kampagnen hast du angesehen. Weitere warten auf dich.'
+              : 'Aktuell gibt es keine weiteren passenden Kampagnen. Schau später wieder vorbei oder passe deine Deal-Präferenzen an.'
+          }
+        />
+      )}
+      {page.nextCursor && !campaign && (
+        <Action busy={page.loading} onPress={page.more}>
+          Weitere Kampagnen laden
+        </Action>
+      )}
+      <Action
+        secondary
+        disabled={mutation.busy || page.loading}
+        onPress={reload}
+      >
+        Aktualisieren
+      </Action>
+      <Action secondary onPress={() => router.push(ROUTE.profile)}>
+        Profil bearbeiten
+      </Action>
+      <SignOutAction />
+    </Page>
+  );
+}

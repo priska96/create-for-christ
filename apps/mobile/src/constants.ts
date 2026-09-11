@@ -5,12 +5,15 @@ export const TIMEOUT = {
 } as const;
 export const ROUTE = {
   home: '/',
-  profile: '/profile',
-  signIn: '/sign-in',
-  signUp: '/sign-up',
-  forgotPassword: '/forgot-password',
-  brandCampaigns: '/brand-campaigns',
-  campaignForm: '/brand-campaign-form',
+  creatorFeed: '/CreatorFeed',
+  myApplications: '/MyApplications',
+  brandApplications: '/BrandApplications',
+  profile: '/profile_tmp',
+  signIn: '/SignIn',
+  signUp: '/SignUp',
+  forgotPassword: '/ForgotPassword',
+  brandCampaigns: '/BrandCampaigns',
+  campaignForm: '/BrandCampaignForm',
 } as const;
 export const FILTER_ALL = 'all';
 export const MONEY = {

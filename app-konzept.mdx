@@ -8,7 +8,7 @@ App-Name: **Create For Christ**. Projektordner und Slug: `create-for-christ`.
 
 Gewählt ist eine eigene kleine Node.js-/TypeScript-API mit PostgreSQL und einer Expo-App. Supabase Self-Hosted und PocketBase werden nicht für die erste Implementierung eingesetzt. Ein späterer schrittweiser Wechsel zu Supabase bleibt möglich. Frühere Architekturvorschläge weiter unten dokumentieren den Entscheidungsverlauf und werden durch diesen Abschnitt ersetzt.
 
-Die Projektgrundlage verwendet npm Workspaces, Fastify, gemeinsame Zod-API-Verträge, versionierte SQL-Migrationen und PostgreSQL per Docker Compose. Die Expo-App bietet Registrierung, E-Mail-Bestätigung, Login/Logout, Passwort-Reset sowie einmaliges Onboarding und Bearbeitung eigener Creator-/Brand-Profile. Better Auth übernimmt die Authentifizierung; eigene Profil-Endpunkte prüfen die Sitzung und Eigentümerschaft serverseitig. Die Vorschau-Rollenwahl bleibt vom tatsächlichen Account getrennt. Brands verwalten eigene Kampagnen als Entwurf, veröffentlicht oder geschlossen, einschließlich Produktbild-Upload; der Server beschränkt jede Änderung auf die eigene Brand, und der Creator-Feed zeigt ausschließlich veröffentlichte, noch offene Kampagnen. Bewerbungs-/Matching-Funktionen folgen als nächster Meilenstein. Die stabilen Profil-IDs sind von künftigen Auth-Anbietern getrennt.
+Die Projektgrundlage verwendet npm Workspaces, Fastify, gemeinsame Zod-API-Verträge, versionierte SQL-Migrationen und PostgreSQL per Docker Compose. Die Expo-App bietet Registrierung, E-Mail-Bestätigung, Login/Logout, Passwort-Reset sowie einmaliges Onboarding und Bearbeitung eigener Creator-/Brand-Profile. Better Auth übernimmt die Authentifizierung; eigene Profil-Endpunkte prüfen die Sitzung und Eigentümerschaft serverseitig. Die Vorschau-Rollenwahl bleibt vom tatsächlichen Account getrennt. Brands verwalten eigene Kampagnen als Entwurf, veröffentlicht oder geschlossen, einschließlich Produktbild-Upload; der Server beschränkt jede Änderung auf die eigene Brand, und der Creator-Feed zeigt ausschließlich veröffentlichte, noch offene Kampagnen. Der persönliche Creator-Feed, dauerhafte Links-Swipes, bestätigte Bewerbungen mit optionalem Pitch, Statuslisten und atomare Zusagen/Absagen sind implementiert. Chat und beidseitige Vereinbarungsbestätigung folgen als nächster Meilenstein. Die stabilen Profil-IDs sind von künftigen Auth-Anbietern getrennt.
 
 Dieses Dokument hält den bisherigen Brainstorming-Stand fest. Bestätigte Anforderungen sind von Vorschlägen und offenen Entscheidungen getrennt. Der App-Name wurde inzwischen als Create For Christ festgelegt.
 
@@ -97,7 +97,7 @@ Creator können nach Barter, Paid oder beiden Deal-Arten filtern. Weitere grundl
 
 Ein Swipe nach links bedeutet „nicht interessiert“. Ein Swipe nach rechts leitet eine Bewerbung ein.
 
-Vorschlag: Nach dem Rechts-Swipe erscheint eine kompakte Bestätigung mit optionaler persönlicher Nachricht. Ob der Swipe die Bewerbung stattdessen sofort absendet und ob ein Preisangebot möglich ist, bleibt offen.
+Umgesetzt: Nach dem Rechts-Swipe erscheint eine Bestätigung mit optionalem Pitch (maximal 1.000 Zeichen). Erst „Bewerbung senden“ übermittelt die Anfrage. Die Vergütung wird aus der Kampagne übernommen; individuelle Preisangebote sind noch nicht vorgesehen.
 
 ### Ablauf für Creator
 
@@ -157,13 +157,13 @@ Der vorgeschlagene MVP konzentriert sich auf das Anbahnen von Kooperationen. Der
 
 Expo ist als Grundlage gewünscht. Vorgeschlagen ist eine gemeinsame App für iOS und Android mit einem Backend für Accounts, Profile, Kampagnen, Bewerbungen, Chats und Medien.
 
-Eine konkrete Architektur-Empfehlung ist unten dokumentiert. Die Technologieauswahl ist ein Vorschlag; es wurde noch keine Implementierung begonnen.
+Die aktuelle Umsetzung verwendet Expo, Fastify/TypeScript und PostgreSQL. Frühere Infrastrukturvorschläge sind unten als Entscheidungsverlauf dokumentiert; maßgeblich ist die aktuelle Entscheidung am Anfang dieses Dokuments.
 
 ## Offene Entscheidungen
 
 1. Muss eine Brand das Reel vor Veröffentlichung freigeben? Empfehlung für den ersten technischen Umfang: Prüfung des veröffentlichten Links; eine Vorabfreigabe benötigt einen zusätzlichen Entwurfsprozess.
-2. Soll ein Rechts-Swipe sofort eine Bewerbung absenden oder zuerst eine kurze Bestätigung öffnen?
-3. Soll eine Bewerbung einen optionalen Pitch und gegebenenfalls ein individuelles Preisangebot enthalten?
+2. Entschieden und umgesetzt: Rechts-Swipe öffnet zuerst eine Bestätigung; Abbrechen sendet nichts.
+3. Umgesetzt: optionaler Pitch. Individuelle Preisangebote bleiben eine spätere Erweiterung.
 4. Werden Paid-Honorare fest vorgegeben oder sind Preisspannen und Verhandlungen möglich?
 5. Welche verbindlichen Angaben gelten für Versand, Produktüberlassung und gegebenenfalls Rücksendung?
 6. Wie werden Leistungen, Gegenleistung, Nutzungsrechte und Termine von beiden Seiten bestätigt?
@@ -347,12 +347,12 @@ Ein Produktbild kann für einen bereits gespeicherten Entwurf hochgeladen werden
 
 Kampagnen durchlaufen die Zustände Entwurf, veröffentlicht und geschlossen. Nur Entwürfe können veröffentlicht und nur veröffentlichte Kampagnen geschlossen werden; geschlossene Kampagnen lassen sich nicht mehr bearbeiten. Jede schreibende Aktion prüft serverseitig, dass die angemeldete Brand Eigentümerin der Kampagne ist; fremde Kampagnen sind weder sichtbar noch änderbar. Der öffentliche Creator-Feed zeigt weiterhin ausschließlich veröffentlichte, noch offene Kampagnen.
 
-Bewerbungen, Swipes und die Annahme durch Brands sind der nächste Meilenstein.
+Bewerbungen, Swipes und die atomare Annahme durch Brands sind umgesetzt; der folgende Abschnitt dokumentiert den Umfang.
 
 
 ### Kampagnen-Review (10. September 2026)
 
-Bodylose Aktionen (Veröffentlichen/Schließen) senden keinen JSON-Content-Type. Uploads sind auf 5 MiB und 25 Megapixel begrenzt; JPEG/PNG/WebP werden serverseitig dekodiert, ohne Metadaten als WebP mit maximal 1600 Pixel Kantenlänge gespeichert. Eigentümerschaft und Kampagnenstatus werden vor dem Speichern innerhalb einer Datenbanktransaktion geprüft. Fehlgeschlagene Uploads und ersetzte Bilder werden entfernt. Produktbilder erscheinen im Discovery-Feed.
+Bodylose Aktionen (Veröffentlichen/Schließen) senden keinen JSON-Content-Type. Uploads sind auf 5 MiB und 25 Megapixel begrenzt; JPEG/PNG/WebP werden serverseitig dekodiert, ohne Metadaten als WebP mit maximal 1600 Pixel Kantenlänge gespeichert. Eigentümerschaft und Kampagnenstatus werden vor dem Speichern innerhalb einer Datenbanktransaktion geprüft. Fehlgeschlagene Uploads und nicht mehr referenzierte ersetzte Bilder werden entfernt. Bilder aus gespeicherten Bewerbungsbedingungen bleiben erhalten. Produktbilder erscheinen im Discovery-Feed.
 
 Bilder liegen weiterhin lokal unter `apps/api/uploads/campaigns` (Start im API-Workspace); dieses Verzeichnis muss beim Deployment persistent gespeichert und gesichert werden. Bild-URLs sind öffentlich, auch bei Entwürfen, und daher nicht für vertrauliche Inhalte geeignet. Alte, bereits verwaiste Dateien werden nicht automatisch gelöscht. Bei einem Prozessabbruch zwischen Dateischreiben und Datenbank-Commit kann ebenfalls eine verwaiste Datei entstehen; ein periodischer Abgleich ist eine spätere Betriebsaufgabe.
 
@@ -364,3 +364,25 @@ Regressionstests decken Bilddekodierung, Dateigrößen/Pixelgrenzen, manipuliert
 Die Architektur bleibt Expo + Fastify + PostgreSQL. Die API ist in Fachmodule für Auth, Profile, Kampagnen und Health gegliedert; HTTP-Prüfungen und Infrastruktur sind getrennt. `app.ts` registriert diese Bausteine. Rollen, Deal-Arten, Statuswerte und fachliche Grenzen sind gemeinsam definiert; UI-Designwerte liegen in einem Theme.
 
 Expo UI wird für gemeinsame Buttons und Checkboxen eingesetzt. React-Native-Eingabefelder bleiben wegen ihrer zugänglichen Labels erhalten. Ein universeller Expo-UI-Host setzt gemeinsame Farben für Web, Android und iOS. Die konkrete Darstellung der nativen Controls bleibt plattformtypisch. Redundante Reload-Zustände, Logout-Logik, Transaktionsblöcke, Imports und Styles wurden bereinigt; TypeScript meldet ungenutzten Code künftig im regulären Check.
+
+
+## Implementierter Meilenstein: Feed, Bewerbungen und Matches
+
+Creator sehen veröffentlichte Kampagnen mit offenen Fristen und freien Plätzen. Der Feed berücksichtigt ihre Deal-Präferenzen und einen zusätzlichen Barter-/Paid-Filter. Bereits beworbene oder per Links-Swipe übersprungene Kampagnen werden dauerhaft ausgeschlossen. Listen laden jeweils 20 Einträge über einen Cursor nach; die Reihenfolge bleibt auch bei identischen Zeitstempeln eindeutig. Themen, Sprachen und Blockierungen sind noch keine Filter dieses Meilensteins.
+
+Rechts-Swipe und „Bewerben“ öffnen eine Bestätigung mit optionalem Pitch. Abbrechen bewirbt sich nicht. Die API akzeptiert nur eine aktuelle Kampagnenrevision, speichert die vollständigen Bedingungen als unveränderlichen Stand und verhindert doppelte Bewerbungen pro Creator/Kampagne. Wiederholte Anfragen liefern die bereits angelegte Bewerbung zurück. Ein Links-Swipe wird erst nach erfolgreicher Speicherung aus dem Feed entfernt; bei Verbindungsfehlern bleibt die Karte erhalten.
+
+Creator verfolgen offene, angenommene und abgelehnte Bewerbungen. Brands öffnen je eigener Kampagne eine Bewerbungsübersicht mit öffentlichem Creator-Profil, Instagram-Kanal, Reel-Portfolio, Pitch und Bedingungen zum Bewerbungszeitpunkt. Auth-Daten und E-Mail-Adressen werden dabei nicht offengelegt. Zusagen und Absagen benötigen eine Bestätigung und können nicht gegeneinander überschrieben werden.
+
+Eine Zusage reserviert innerhalb einer PostgreSQL-Transaktion einen freien Platz und legt genau eine Kooperation im Status `negotiating` an. Gleichzeitig eingehende Zusagen können die Kapazität nicht überschreiten. Alle betroffenen Schreibvorgänge sperren zuerst die Kampagne; die Brand kann Plätze nicht unter bereits angenommene Bewerbungen reduzieren. Geschlossene oder abgelaufene Kampagnen erlauben keine neue Zusage, offene Bewerbungen können weiterhin abgelehnt werden. Der ursprüngliche Bewerbungsstand wird in die Kooperation übernommen; spätere Änderungen an der Kampagne überschreiben ihn nicht.
+
+Migration `004_applications.sql` ergänzt Kampagnenrevisionen, `campaign_dismissals`, Entscheidungszeitpunkte sowie die gespeicherten Bewerbungs-/Kooperationsbedingungen. Vorhandene Bewerbungen aus dem Gerüst werden mit den zum Migrationszeitpunkt verfügbaren Bedingungen ergänzt; historische Bedingungen lassen sich für solche Altdaten nicht nachträglich rekonstruieren.
+
+Der nächste Meilenstein ist **Chat und beidseitige Vereinbarungsbestätigung**. Ein Match ist zunächst eine Zusage zur Bewerbung, noch kein beidseitig bestätigter Auftrag. Push, automatische Instagram-Prüfung, Preisangebote und Rücknahme einer Bewerbung sind nicht Teil des aktuellen Umfangs.
+
+
+### Prüfstand des Bewerbungsmeilensteins
+
+`npm run check`, `npm run test:integration` und `npm run format:check` sind erfolgreich. Die fünf API-/Upload-Tests und 15 Integrationstest-Einträge einschließlich der beiden übergeordneten Testfälle sind grün. Der Browser-Test mit getrennten Creator-/Brand-Sitzungen prüft echte Links-/Rechts-Gesten, Abbrechen ohne Bewerbung, veraltete Bedingungen, optionalen Pitch, einen fehlgeschlagenen Request mit Wiederholung, Zusage/Absage, Statusfilter und persistente Feed-Ausschlüsse. Dabei traten keine Browser-JavaScript-Fehler auf.
+
+Die aktuelle Expo-App wurde für Web, iOS und Android exportiert. Ein interaktiver Test auf einem nativen Gerät oder Simulator steht noch aus. Migration `004_applications.sql` ist auf der lokalen Entwicklungsdatenbank angewendet; bestehende Migrationen wurden nicht geändert. API und Expo nach dem Update neu starten.
