@@ -12,6 +12,7 @@ export const APPLICATION = {
 } as const;
 export const APPLICATION_PATH = {
   feed: '/v1/creator/feed',
+  brandInbox: '/v1/brand/applications',
   apply: '/v1/creator/campaigns/:id/applications',
   dismiss: '/v1/creator/campaigns/:id/dismiss',
   own: '/v1/creator/applications',

@@ -59,6 +59,19 @@ export function registerApplicationRoutes(
       )
     );
   });
+  app.get(APPLICATION_PATH.brandInbox, async (request) => {
+    const session = await requireSession(request, true);
+    return applicationPageSchema.parse(
+      await store.listBrandInbox(
+        session.user.id,
+        parseInput(
+          applicationQuerySchema,
+          request.query,
+          APPLICATION_MESSAGE.invalidQuery
+        )
+      )
+    );
+  });
   app.get(APPLICATION_PATH.brand, async (request) => {
     const session = await requireSession(request, true);
     return applicationPageSchema.parse(

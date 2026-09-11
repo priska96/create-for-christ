@@ -23,7 +23,15 @@ import {
 import { authClient } from '../src/authClient';
 import { CAMPAIGN_STATUS_LABEL, ROUTE } from '../src/constants';
 import { useMe } from '../src/hooks';
-import { Action, Notice, Page, SignOutAction, ui } from '../src/ui';
+import {
+  Action,
+  CampaignCover,
+  IconButton,
+  Notice,
+  Page,
+  SignOutAction,
+  ui,
+} from '../src/ui';
 import { colors, fontSize, fontWeight, radii, spacing } from '../src/ui/theme';
 
 export default function BrandCampaigns() {
@@ -106,11 +114,17 @@ export default function BrandCampaigns() {
   return (
     <Page
       title="Deine Kampagnen"
+      navigationRole={ROLE.brand}
+      headerAction={
+        <IconButton
+          small
+          icon="add"
+          label="Neue Kampagne"
+          onPress={() => router.push(ROUTE.campaignForm)}
+        />
+      }
       subtitle="Erstelle Entwürfe, veröffentliche sie für Creator und schließe sie bei Bedarf wieder."
     >
-      <Action onPress={() => router.push(ROUTE.campaignForm)}>
-        Neue Kampagne
-      </Action>
       <Notice message={error} error />
       {loading ? (
         <ActivityIndicator />
@@ -119,6 +133,11 @@ export default function BrandCampaigns() {
       ) : (
         campaigns.map((campaign) => (
           <View key={campaign.id} style={styles.card}>
+            <CampaignCover
+              key={campaign.productImageUrl}
+              url={campaign.productImageUrl}
+              label={campaign.productName}
+            />
             <View style={styles.row}>
               <Text style={styles.title}>{campaign.title}</Text>
               <Text
@@ -195,10 +214,6 @@ export default function BrandCampaigns() {
           </View>
         ))
       )}
-      <Action secondary onPress={() => router.replace(ROUTE.home)}>
-        Zurück
-      </Action>
-      <SignOutAction />
     </Page>
   );
 }

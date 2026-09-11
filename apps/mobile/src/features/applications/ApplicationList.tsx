@@ -1,16 +1,32 @@
 import {
   APPLICATION_STATUS,
+  ROLE,
   type ApplicationRecord,
 } from '@create-for-christ/contracts';
-import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Linking, Text, View } from 'react-native';
-import { decideApplication, getApplications } from '../../api/applications';
-import { FILTER_ALL, ROUTE } from '../../constants';
+import {
+  decideApplication,
+  getApplications,
+  getBrandInbox,
+} from '../../api/applications';
+import { FILTER_ALL } from '../../constants';
 import { useMutation } from '../../hooks/useMutation';
 import { usePagedItems } from '../../hooks/usePagedItems';
-import { Action, Choice, Notice, Page, ui } from '../../ui';
+import {
+  Action,
+  Avatar,
+  Choice,
+  DetailSheet,
+  EmptyState,
+  IconButton,
+  Notice,
+  Page,
+  ui,
+} from '../../ui';
 import { CampaignBrief } from './CampaignBrief';
+import { ApplicationRow } from './ApplicationRow';
+import { MatchPanel } from './MatchPanel';
 import {
   DECISION,
   INSTAGRAM_PROFILE_URL,
@@ -18,28 +34,37 @@ import {
   type Decision,
 } from './constants';
 import { styles } from './styles';
-export function ApplicationList({ campaignId }: { campaignId?: string }) {
+export function ApplicationList({
+  campaignId,
+  brandInbox = false,
+}: {
+  campaignId?: string;
+  brandInbox?: boolean;
+}) {
+  const brandView = brandInbox || Boolean(campaignId);
   const [filter, setFilter] = useState<
     ApplicationRecord['status'] | typeof FILTER_ALL
   >(FILTER_ALL);
-  const [decision, setDecision] = useState<{
-    id: string;
-    action: Decision;
-  } | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [decision, setDecision] = useState<Decision | null>(null);
+  const [match, setMatch] = useState<ApplicationRecord | null>(null);
   const [notice, setNotice] = useState('');
   const mutation = useMutation();
   const fetchPage = useCallback(
     async (cursor: string | undefined, signal: AbortSignal) => {
-      const result = await getApplications(
-        { cursor, ...(filter === FILTER_ALL ? {} : { status: filter }) },
-        campaignId,
-        signal
-      );
+      const query = {
+        cursor,
+        ...(filter === FILTER_ALL ? {} : { status: filter }),
+      };
+      const result = await (brandInbox
+        ? getBrandInbox(query, signal)
+        : getApplications(query, campaignId, signal));
       return { items: result.applications, nextCursor: result.nextCursor };
     },
-    [campaignId, filter]
+    [campaignId, brandInbox, filter]
   );
   const page = usePagedItems(fetchPage);
+  const selected = page.items.find((item) => item.id === selectedId);
   function update(application: ApplicationRecord) {
     page.setItems((items) =>
       items
@@ -47,11 +72,20 @@ export function ApplicationList({ campaignId }: { campaignId?: string }) {
         .filter((item) => filter === FILTER_ALL || item.status === filter)
     );
     setDecision(null);
+    setSelectedId(null);
     setNotice(
       application.status === APPLICATION_STATUS.accepted
         ? 'Bewerbung angenommen. Euer Match wurde erstellt.'
         : 'Bewerbung abgelehnt.'
     );
+  }
+  function open(
+    application: ApplicationRecord,
+    action: Decision | null = null
+  ) {
+    mutation.clearError();
+    setSelectedId(application.id);
+    setDecision(action);
   }
   function openLink(url: string) {
     void mutation.run(
@@ -61,15 +95,24 @@ export function ApplicationList({ campaignId }: { campaignId?: string }) {
       () => {}
     );
   }
+  function reload() {
+    setSelectedId(null);
+    setDecision(null);
+    mutation.clearError();
+    page.reload();
+  }
   return (
     <Page
-      title={
-        campaignId ? 'Bewerbungen für deine Kampagne' : 'Meine Bewerbungen'
-      }
-      subtitle={
-        campaignId
-          ? 'Prüfe Creator und ihre Bewerbung. Eine Zusage reserviert einen Kampagnenplatz.'
-          : 'Hier siehst du, welche Brands dir bereits zugesagt haben.'
+      title="Bewerbungen"
+      navigationRole={brandView ? ROLE.brand : ROLE.creator}
+      headerAction={
+        <IconButton
+          small
+          icon="refresh-outline"
+          label="Aktualisieren"
+          disabled={mutation.busy || page.loading}
+          onPress={reload}
+        />
       }
     >
       <View style={styles.filters}>
@@ -90,41 +133,100 @@ export function ApplicationList({ campaignId }: { campaignId?: string }) {
             disabled={mutation.busy}
             onPress={() => {
               setFilter(value as typeof filter);
+              setSelectedId(null);
               setDecision(null);
             }}
           />
         ))}
       </View>
       <Notice message={notice} />
-      <Notice error message={mutation.error || page.error} />
-      {page.items.map((application) => (
-        <View key={application.id} style={styles.card}>
-          <Text style={styles.status}>{STATUS_LABEL[application.status]}</Text>
-          {campaignId && (
+      <Notice
+        error
+        message={selected ? page.error : mutation.error || page.error}
+      />
+      <View>
+        {page.items.map((application) => (
+          <ApplicationRow
+            key={application.id}
+            application={application}
+            brandView={brandView}
+            busy={mutation.busy}
+            onOpen={() => open(application)}
+            onAccept={() => open(application, DECISION.accept)}
+            onReject={() => open(application, DECISION.reject)}
+          />
+        ))}
+      </View>
+      {page.loading && <ActivityIndicator />}
+      {!page.loading && !page.items.length && !page.error && (
+        <EmptyState
+          icon="file-tray-outline"
+          title="Hier beginnt Verbindung."
+          description="Hier gibt es noch keine Bewerbungen. Neue Anfragen und Zusagen erscheinen in dieser Übersicht."
+        />
+      )}
+      {page.nextCursor && (
+        <Action
+          busy={page.loading}
+          disabled={mutation.busy}
+          onPress={page.more}
+        >
+          Weitere Bewerbungen laden
+        </Action>
+      )}
+      {selected && (
+        <DetailSheet
+          title={brandView ? 'Creator-Profil' : 'Deine Bewerbung'}
+          fullScreenContent={
+            match ? (
+              <MatchPanel application={match} onClose={() => setMatch(null)} />
+            ) : undefined
+          }
+          busy={mutation.busy}
+          onClose={() => {
+            setSelectedId(null);
+            setDecision(null);
+            setMatch(null);
+          }}
+        >
+          <View style={{ alignItems: 'center' }}>
+            <Avatar
+              large
+              name={
+                brandView
+                  ? selected.creator.displayName
+                  : selected.campaign.brandName
+              }
+            />
+          </View>
+          <Text style={ui.title}>
+            {brandView
+              ? selected.creator.displayName
+              : selected.campaign.brandName}
+          </Text>
+          <Text style={styles.status}>{STATUS_LABEL[selected.status]}</Text>
+          {brandView && (
             <>
-              <Text style={styles.title}>
-                {application.creator.displayName}
-              </Text>
-              <Text style={ui.body}>{application.creator.bio}</Text>
               <Text style={ui.body}>
-                {[
-                  application.creator.location,
-                  application.creator.languages.join(', '),
-                  application.creator.topics.join(', '),
-                ]
-                  .filter(Boolean)
-                  .join(' · ')}
+                {selected.creator.location} ·{' '}
+                {selected.creator.languages.join(', ')}
               </Text>
+              <Text style={ui.label}>Über mich</Text>
+              <Text style={ui.body}>
+                {selected.creator.bio || 'Noch keine Beschreibung.'}
+              </Text>
+              <Text style={ui.body}>{selected.creator.topics.join(' · ')}</Text>
               <Action
                 secondary
                 disabled={mutation.busy}
                 onPress={() =>
                   openLink(
-                    `${INSTAGRAM_PROFILE_URL}${encodeURIComponent(application.creator.instagramHandle)}/`
+                    `${INSTAGRAM_PROFILE_URL}${encodeURIComponent(selected.creator.instagramHandle)}/`
                   )
                 }
-              >{`@${application.creator.instagramHandle} auf Instagram`}</Action>
-              {application.creator.portfolioUrls.map((url, index) => (
+              >{`@${selected.creator.instagramHandle} auf Instagram`}</Action>
+              <Text style={ui.label}>Beispiel-Content</Text>
+              {selected.creator.portfolioUrls.map((url, index) => (
                 <Action
                   key={url}
                   secondary
@@ -132,23 +234,30 @@ export function ApplicationList({ campaignId }: { campaignId?: string }) {
                   onPress={() => openLink(url)}
                 >{`Portfolio-Reel ${index + 1}`}</Action>
               ))}
+              {!selected.creator.portfolioUrls.length && (
+                <Text style={ui.body}>Noch keine Reel-Links angegeben.</Text>
+              )}
             </>
           )}
           <Text style={ui.label}>Bedingungen zum Bewerbungszeitpunkt</Text>
-          <CampaignBrief campaign={application.campaign} showImage={false} />
+          <CampaignBrief campaign={selected.campaign} showImage={false} />
           <Text style={ui.body}>
-            Pitch: {application.pitch || 'Kein Pitch angegeben.'}
+            Pitch: {selected.pitch || 'Kein Pitch angegeben.'}
           </Text>
-          {application.collaborationId && (
-            <Notice message="Ihr habt ein Match! Die Brand hat diese Bewerbung angenommen." />
+          <Notice error message={mutation.error} />
+          {selected.collaborationId && (
+            <>
+              <Notice message="Ihr habt ein Match! Die Brand hat diese Bewerbung angenommen." />
+              <Action onPress={() => setMatch(selected)}>Match ansehen</Action>
+            </>
           )}
-          {campaignId &&
-            application.status === APPLICATION_STATUS.pending &&
-            (decision?.id === application.id ? (
+          {brandView &&
+            selected.status === APPLICATION_STATUS.pending &&
+            (decision ? (
               <>
                 <Notice
                   message={
-                    decision.action === DECISION.accept
+                    decision === DECISION.accept
                       ? 'Diese Bewerbung zu den gespeicherten Bedingungen annehmen und einen Platz reservieren?'
                       : 'Diese Bewerbung endgültig ablehnen?'
                   }
@@ -157,12 +266,12 @@ export function ApplicationList({ campaignId }: { campaignId?: string }) {
                   busy={mutation.busy}
                   onPress={() =>
                     void mutation.run(
-                      () => decideApplication(application.id, decision.action),
+                      () => decideApplication(selected.id, decision),
                       update
                     )
                   }
                 >
-                  {decision.action === DECISION.accept
+                  {decision === DECISION.accept
                     ? 'Zusage bestätigen'
                     : 'Absage bestätigen'}
                 </Action>
@@ -178,57 +287,21 @@ export function ApplicationList({ campaignId }: { campaignId?: string }) {
               <>
                 <Action
                   disabled={mutation.busy}
-                  onPress={() =>
-                    setDecision({ id: application.id, action: DECISION.accept })
-                  }
+                  onPress={() => setDecision(DECISION.accept)}
                 >
                   Annehmen
                 </Action>
                 <Action
                   secondary
                   disabled={mutation.busy}
-                  onPress={() =>
-                    setDecision({ id: application.id, action: DECISION.reject })
-                  }
+                  onPress={() => setDecision(DECISION.reject)}
                 >
                   Ablehnen
                 </Action>
               </>
             ))}
-        </View>
-      ))}
-      {page.loading && <ActivityIndicator />}
-      {!page.loading && !page.items.length && !page.error && (
-        <Notice message="Hier gibt es noch keine Bewerbungen." />
+        </DetailSheet>
       )}
-      {page.nextCursor && (
-        <Action
-          busy={page.loading}
-          disabled={mutation.busy}
-          onPress={page.more}
-        >
-          Weitere Bewerbungen laden
-        </Action>
-      )}
-      <Action
-        secondary
-        disabled={mutation.busy || page.loading}
-        onPress={() => {
-          setDecision(null);
-          mutation.clearError();
-          page.reload();
-        }}
-      >
-        Aktualisieren
-      </Action>
-      <Action
-        secondary
-        onPress={() =>
-          router.replace(campaignId ? ROUTE.brandCampaigns : ROUTE.home)
-        }
-      >
-        Zurück
-      </Action>
     </Page>
   );
 }

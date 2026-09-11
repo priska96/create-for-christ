@@ -168,3 +168,16 @@ Die Personalisierung berücksichtigt derzeit Deal-Präferenzen, Verfügbarkeit u
 `npm run check`, `npm run test:integration` und `npm run format:check` sind erfolgreich. Die fünf API-/Upload-Tests und 15 Integrationstest-Einträge einschließlich der beiden übergeordneten Testfälle sind grün. Der Browser-Test mit getrennten Creator-/Brand-Sitzungen prüft echte Links-/Rechts-Gesten, Abbrechen ohne Bewerbung, veraltete Bedingungen, optionalen Pitch, einen fehlgeschlagenen Request mit Wiederholung, Zusage/Absage, Statusfilter und persistente Feed-Ausschlüsse. Dabei traten keine Browser-JavaScript-Fehler auf.
 
 Die aktuelle Expo-App wurde für Web, iOS und Android exportiert. Ein interaktiver Test auf einem nativen Gerät oder Simulator steht noch aus. Migration `004_applications.sql` ist auf der lokalen Entwicklungsdatenbank angewendet; bestehende Migrationen wurden nicht geändert. API und Expo nach dem Update neu starten.
+
+
+## Designumsetzung nach Vorlage (11. September 2026)
+
+Die Vorlage `designs/ChatGPT Image 10. Sept. 2026, 11_14_49.png` bestimmt den visuellen Stil: helle Flächen, dunkle runde Buttons, Korall-Akzente, grüne Zusagen, rote Absagen und großzügige Produktkarten. Der App-Name bleibt Create For Christ, und das Angebot bleibt auf Instagram-Reels beschränkt.
+
+`Page` setzt einen gemeinsamen kompakten Header und die feste Bottom-Navigation außerhalb des Scrollbereichs um. Beide Rollen haben Home, Bewerbungen, Nachrichten und Profil. Creator-Home führt zum Swipe-Feed, Brand-Home zur Kampagnenverwaltung. Der Bewerbungs-Tab zeigt für Brands alle eigenen Kampagnen gemeinsam, für Creator die eigenen Bewerbungen. Die aktiven Tabs sind beschriftet und visuell sowie für Screenreader markiert.
+
+Wiederverwendbare Bausteine liegen in `src/ui`: BottomNavigation, Icon, IconButton, Avatar, CampaignCover, DetailSheet, EmptyState und RoleOption. Profile, Formulare und Bestätigungen verwenden die bestehenden gemeinsamen Expo-UI-Buttons und zugänglichen Eingabefelder. Produktbilder kommen aus den Kampagnen; fehlende Bilder und derzeit nicht gespeicherte Profilfotos werden durch neutrale Flächen bzw. Initialen ersetzt. Erfundenes Bildmaterial, Bewertungen, Followerzahlen und Online-Status werden nicht angezeigt.
+
+Bewerbungen erscheinen als kompakte Zeilen. Ein Antippen öffnet die Detailansicht mit Creator-Profil, Reel-Links, Pitch und vollständigen Bedingungen. Zusage/Absage bleibt bestätigt und serverseitig geschützt. Die dunkle Match-Ansicht ist nur für tatsächlich angenommene Bewerbungen zugänglich. Der Nachrichten-Tab hat einen ausdrücklich als noch nicht verfügbar gekennzeichneten Leerzustand; echter Chat-Versand ist weiterhin der nächste funktionale Meilenstein.
+
+Der neue Endpunkt `GET /v1/brand/applications` liefert ausschließlich Bewerbungen eigener Brand-Kampagnen und unterstützt die vorhandenen Statusfilter und Cursor. Die Integrationstests prüfen Brand-Isolation und Creator-Ausschluss. Es ist keine neue Datenbankmigration nötig. Die Browserprüfung auf 390 × 844 Pixeln deckt alle vier Tabs für beide Rollen, die feste Navigation beim Scrollen, Swipes, Details, Zusagen/Absagen, Match-Ansicht und Kampagnenformulare ab. Ein interaktiver nativer Gerätetest steht weiterhin aus.

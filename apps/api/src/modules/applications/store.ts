@@ -145,6 +145,9 @@ export function createApplicationStore(pool: pg.Pool) {
         return { dismissed: true as const };
       });
     },
+    async listBrandInbox(userId: string, query: ApplicationQuery) {
+      return list('brandOwner', userId, query);
+    },
     async listOwn(userId: string, query: ApplicationQuery) {
       const creator = await creatorId(pool, userId);
       return list('a.creator_id', creator, query);
@@ -199,14 +202,16 @@ export function createApplicationStore(pool: pg.Pool) {
     },
   };
   async function list(
-    column: 'a.creator_id' | 'a.campaign_id',
+    column: 'a.creator_id' | 'a.campaign_id' | 'brandOwner',
     id: string,
     query: ApplicationQuery
   ) {
     const cursor = readCursor(query.cursor);
+    const ownerFilter = `EXISTS (SELECT 1 FROM campaigns c JOIN brand_members bm ON bm.brand_id=c.brand_id AND bm.role='owner' JOIN auth_identities identity ON identity.profile_id=bm.profile_id WHERE c.id=a.campaign_id AND identity.subject=$1 AND identity.provider='${AUTH.provider}')`;
+    const filter = column === 'brandOwner' ? ownerFilter : `${column}=$1`;
     const { rows } = await pool.query(
       `SELECT ${applicationFields}, ${cursorColumn('a')} FROM applications a ${applicationJoins}
-      WHERE ${column}=$1 AND ($2::text IS NULL OR a.status=$2) AND ($3::timestamptz IS NULL OR (a.created_at,a.id)<($3::timestamptz,$4::uuid)) ORDER BY a.created_at DESC,a.id DESC LIMIT $5`,
+      WHERE ${filter} AND ($2::text IS NULL OR a.status=$2) AND ($3::timestamptz IS NULL OR (a.created_at,a.id)<($3::timestamptz,$4::uuid)) ORDER BY a.created_at DESC,a.id DESC LIMIT $5`,
       [
         id,
         query.status ?? null,

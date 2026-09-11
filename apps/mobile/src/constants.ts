@@ -5,6 +5,8 @@ export const TIMEOUT = {
 } as const;
 export const ROUTE = {
   home: '/',
+  brandInbox: '/BrandInbox',
+  messages: '/Messages',
   creatorFeed: '/CreatorFeed',
   myApplications: '/MyApplications',
   brandApplications: '/BrandApplications',

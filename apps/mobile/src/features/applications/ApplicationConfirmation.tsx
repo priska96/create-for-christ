@@ -32,7 +32,7 @@ export function ApplicationConfirmation({
       }}
     >
       <Page title="Bewerbung bestätigen">
-        <CampaignBrief campaign={campaign} compact showImage={false} />
+        <CampaignBrief campaign={campaign} showImage={false} />
         <Text style={ui.body}>
           Du bewirbst dich zu den gezeigten Bedingungen. Erst wenn die Brand
           zusagt, entsteht ein Match.

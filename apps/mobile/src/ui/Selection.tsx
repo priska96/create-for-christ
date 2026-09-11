@@ -18,7 +18,7 @@ export function Choice({ label, checked, disabled, onPress }: SelectionProps) {
       onPress={onPress}
       style={[ui.chip, checked && ui.selected]}
     >
-      <Text style={ui.label}>{label}</Text>
+      <Text style={ui.choiceLabel}>{label}</Text>
     </Pressable>
   );
 }

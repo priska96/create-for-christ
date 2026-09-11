@@ -49,7 +49,7 @@ export const ui = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    borderRadius: radii.control,
+    borderRadius: radii.small,
     padding: spacing.input,
     fontSize: fontSize.input,
     color: colors.text,
@@ -66,10 +66,16 @@ export const ui = StyleSheet.create({
   chip: {
     borderWidth: 1,
     borderColor: colors.border,
-    padding: spacing.md,
+    padding: spacing.sm,
     borderRadius: radii.control,
     flex: 1,
     alignItems: 'center',
+  },
+  choiceLabel: {
+    fontSize: fontSize.caption,
+    color: colors.text,
+    fontWeight: fontWeight.semibold,
+    textAlign: 'center',
   },
   selected: { backgroundColor: colors.selected, borderColor: colors.primary },
 });

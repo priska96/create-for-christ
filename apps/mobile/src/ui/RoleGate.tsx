@@ -1,5 +1,8 @@
 import { type ReactNode } from 'react';
-import { type ProfileInput } from '@create-for-christ/contracts';
+import {
+  type OwnProfile,
+  type ProfileInput,
+} from '@create-for-christ/contracts';
 import { Redirect } from 'expo-router';
 import { ActivityIndicator } from 'react-native';
 import { authClient } from '../authClient';
@@ -12,8 +15,8 @@ export function RoleGate({
   role,
   children,
 }: {
-  role: ProfileInput['role'];
-  children: ReactNode;
+  role?: ProfileInput['role'];
+  children: ReactNode | ((profile: OwnProfile) => ReactNode);
 }) {
   const { data: session, isPending, error, refetch } = authClient.useSession();
   const profile = useMe(session?.user.id);
@@ -44,7 +47,9 @@ export function RoleGate({
     );
   if (!session) return <Redirect href={ROUTE.signIn} />;
   if (!profile.me?.profile) return <Redirect href={ROUTE.profile} />;
-  if (profile.me.profile.details.role !== role)
+  if (role && profile.me.profile.details.role !== role)
     return <Redirect href={ROUTE.home} />;
-  return children;
+  return typeof children === 'function'
+    ? children(profile.me.profile)
+    : children;
 }

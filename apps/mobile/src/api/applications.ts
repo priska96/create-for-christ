@@ -68,3 +68,17 @@ export async function decideApplication(
     await authenticatedRequest(applicationDecisionPath(id, decision), 'POST')
   );
 }
+
+export async function getBrandInbox(
+  query: ApplicationQuery,
+  signal?: AbortSignal
+) {
+  return applicationPageSchema.parse(
+    await authenticatedRequest(
+      queryPath(APPLICATION_PATH.brandInbox, query),
+      'GET',
+      undefined,
+      signal
+    )
+  );
+}

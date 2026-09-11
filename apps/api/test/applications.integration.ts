@@ -311,6 +311,30 @@ test('real PostgreSQL: applications, snapshots, authorization and concurrent cap
         ).statusCode,
         403
       );
+      assert.equal(
+        (await request('GET', '/v1/brand/applications', first.cookie))
+          .statusCode,
+        403
+      );
+      const inbox = await request(
+        'GET',
+        '/v1/brand/applications',
+        brand.cookie
+      );
+      assert.equal(inbox.statusCode, 200, inbox.body);
+      assert.ok(
+        inbox
+          .json()
+          .applications.some(
+            (item: { id: string }) => item.id === application.id
+          )
+      );
+      assert.equal(
+        (
+          await request('GET', '/v1/brand/applications', otherBrand.cookie)
+        ).json().applications.length,
+        0
+      );
       const own = await request(
         'GET',
         '/v1/creator/applications',

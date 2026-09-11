@@ -10,13 +10,14 @@ import {
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
+import { RoleOption } from '../../ui/RoleOption';
 import { saveProfile } from '../../api';
 import { DEAL_LABEL, ROUTE } from '../../constants';
 import { fieldErrors, splitList } from '../../forms';
 import {
   Action,
+  Avatar,
   Check,
-  Choice,
   Field,
   Notice,
   Page,
@@ -127,7 +128,15 @@ export function ProfileForm({
   }
   return (
     <Page
-      title={initial ? 'Dein Profil.' : 'Was möchtest du bewegen?'}
+      title={
+        initial
+          ? role === ROLE.creator
+            ? 'Dein Creator-Profil'
+            : 'Dein Brand-Profil'
+          : 'Deine kreative Zukunft.'
+      }
+      navigationRole={initial ? role : undefined}
+      branded={!initial}
       subtitle={
         initial
           ? 'Halte deine Angaben aktuell.'
@@ -135,18 +144,14 @@ export function ProfileForm({
       }
     >
       {!initial ? (
-        <View style={ui.row}>
+        <View style={ui.field}>
           {Object.values(ROLE).map((value) => (
-            <Choice
+            <RoleOption
               key={value}
+              role={value}
+              selected={role === value}
               disabled={busy}
-              checked={role === value}
               onPress={() => setRole(value)}
-              label={
-                value === ROLE.creator
-                  ? 'Ich bin Creator'
-                  : 'Ich bin eine Brand'
-              }
             />
           ))}
         </View>
@@ -155,6 +160,12 @@ export function ProfileForm({
           {role === ROLE.creator ? 'Creator-Profil' : 'Brand-Profil'}
         </Text>
       )}
+      <View style={{ alignItems: 'center' }}>
+        <Avatar
+          large
+          name={role === ROLE.brand ? brandName || displayName : displayName}
+        />
+      </View>
       <Field
         label={
           role === ROLE.brand ? 'Dein Name / Ansprechpartner' : 'Dein Name'

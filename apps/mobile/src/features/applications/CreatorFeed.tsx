@@ -1,5 +1,4 @@
-import { DEAL, type DealType } from '@create-for-christ/contracts';
-import { router } from 'expo-router';
+import { DEAL, ROLE, type DealType } from '@create-for-christ/contracts';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import {
@@ -7,12 +6,21 @@ import {
   dismissCampaign,
   getCreatorFeed,
 } from '../../api/applications';
-import { DEAL_LABEL, FILTER_ALL, ROUTE } from '../../constants';
+import { DEAL_LABEL, FILTER_ALL } from '../../constants';
 import { useMutation } from '../../hooks/useMutation';
 import { usePagedItems } from '../../hooks/usePagedItems';
-import { Action, Choice, Notice, Page, SignOutAction, ui } from '../../ui';
+import {
+  Action,
+  Choice,
+  DetailSheet,
+  IconButton,
+  Notice,
+  Page,
+  ui,
+} from '../../ui';
 import { CampaignBrief } from './CampaignBrief';
 import { ApplicationConfirmation } from './ApplicationConfirmation';
+import { CampaignSwipeCard } from './CampaignSwipeCard';
 import { SwipeCard } from './SwipeCard';
 import { styles } from './styles';
 
@@ -21,6 +29,7 @@ export function CreatorFeed() {
     FILTER_ALL
   );
   const [confirming, setConfirming] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const [pitch, setPitch] = useState('');
   const [notice, setNotice] = useState('');
   const mutation = useMutation();
@@ -63,18 +72,26 @@ export function CreatorFeed() {
   }
   return (
     <Page
-      title="Entdecke deine nächste Brand."
-      subtitle="Reels auf deinem Instagram-Kanal. Wähle die Kampagnen, die zu dir passen."
+      title="Entdecke Brands"
+      navigationRole={ROLE.creator}
+      headerAction={
+        <IconButton
+          small
+          icon="refresh-outline"
+          label="Aktualisieren"
+          disabled={mutation.busy || page.loading}
+          onPress={reload}
+        />
+      }
     >
-      <Action secondary onPress={() => router.push(ROUTE.myApplications)}>
-        Meine Bewerbungen
-      </Action>
       <View style={styles.filters}>
         {[FILTER_ALL, ...Object.values(DEAL)].map((value) => (
           <Choice
             key={value}
             label={
-              value === FILTER_ALL ? 'Alle' : DEAL_LABEL[value as DealType]
+              value === FILTER_ALL
+                ? 'Alle Deals'
+                : DEAL_LABEL[value as DealType]
             }
             checked={filter === value}
             disabled={mutation.busy || confirming}
@@ -86,9 +103,7 @@ export function CreatorFeed() {
           />
         ))}
       </View>
-      <Text style={ui.body}>
-        Deine Deal-Präferenzen aus dem Profil werden berücksichtigt.
-      </Text>
+
       <Notice message={notice} />
       <Notice error message={confirming ? '' : mutation.error || page.error} />
       {page.loading && <ActivityIndicator />}
@@ -100,24 +115,50 @@ export function CreatorFeed() {
             onInterested={interested}
             onDismiss={dismiss}
           >
-            <View style={styles.card}>
-              <CampaignBrief campaign={campaign} />
-              <Text style={ui.label}>
-                {campaign.remainingSlots} freie Plätze
-              </Text>
-            </View>
+            <CampaignSwipeCard campaign={campaign} />
           </SwipeCard>
-          <Action disabled={mutation.busy || confirming} onPress={interested}>
-            Bewerben
-          </Action>
-          <Action
-            secondary
-            busy={mutation.busy}
-            disabled={confirming}
-            onPress={dismiss}
-          >
-            Nicht interessiert
-          </Action>
+          <View style={{ ...ui.row, justifyContent: 'center' }}>
+            <IconButton
+              icon="close"
+              label="Nicht interessiert"
+              tone="negative"
+              busy={mutation.busy}
+              disabled={confirming}
+              onPress={dismiss}
+            />
+            <IconButton
+              icon="information"
+              label="Kampagnendetails"
+              disabled={mutation.busy}
+              onPress={() => setShowDetails(true)}
+            />
+            <IconButton
+              icon="heart"
+              label="Bewerben"
+              tone="positive"
+              disabled={mutation.busy || confirming}
+              onPress={interested}
+            />
+          </View>
+          <Text style={[ui.body, { textAlign: 'center' }]}>
+            {campaign.remainingSlots} freie Plätze · Swipe. Match. Create.
+          </Text>
+          {showDetails && (
+            <DetailSheet
+              title="Deine Kooperation"
+              onClose={() => setShowDetails(false)}
+            >
+              <CampaignBrief campaign={campaign} />
+              <Action
+                onPress={() => {
+                  setShowDetails(false);
+                  interested();
+                }}
+              >
+                Bewerben
+              </Action>
+            </DetailSheet>
+          )}
           <ApplicationConfirmation
             campaign={campaign}
             visible={confirming}
@@ -160,17 +201,6 @@ export function CreatorFeed() {
           Weitere Kampagnen laden
         </Action>
       )}
-      <Action
-        secondary
-        disabled={mutation.busy || page.loading}
-        onPress={reload}
-      >
-        Aktualisieren
-      </Action>
-      <Action secondary onPress={() => router.push(ROUTE.profile)}>
-        Profil bearbeiten
-      </Action>
-      <SignOutAction />
     </Page>
   );
 }

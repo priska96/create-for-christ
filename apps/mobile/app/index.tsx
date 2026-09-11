@@ -42,11 +42,5 @@ export default function Index() {
   if (!profile.me?.profile) return <Redirect href={ROUTE.profile} />;
   if (profile.me.profile.details.role === ROLE.creator)
     return <Redirect href={ROUTE.creatorFeed} />;
-  return (
-    <Discovery
-      key={session.user.id}
-      initialRole={profile.me.profile.details.role}
-      authenticated
-    />
-  );
+  return <Redirect href={ROUTE.brandCampaigns} />;
 }
