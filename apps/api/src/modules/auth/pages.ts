@@ -1,7 +1,8 @@
+import { readFile } from 'node:fs/promises';
 import { API_PATH, AUTH } from '@create-for-christ/contracts';
 import type { FastifyInstance } from 'fastify';
 
-const style = `body{font:16px system-ui;background:#f7f5ef;color:#203b30;margin:0;padding:32px}main{max-width:440px;margin:8vh auto;background:#fffdf8;padding:32px;border-radius:24px}h1{font-size:28px}p{line-height:1.6}label{display:block;margin-top:20px}input,button{box-sizing:border-box;width:100%;padding:14px;margin-top:8px;border:1px solid #b8c5b7;border-radius:12px;font:inherit}button{background:#36584a;color:white;cursor:pointer}button:disabled{opacity:.6}a{color:#36584a}#message{white-space:pre-line}`;
+const style = `body{font:16px system-ui;background:#f7f5ef;color:#203b30;margin:0;padding:32px}main{max-width:440px;margin:8vh auto;background:#fffdf8;padding:32px;border-radius:24px}h1{font-size:28px}p{line-height:1.6}label{display:block;margin-top:20px}input,button{box-sizing:border-box;width:100%;padding:14px;margin-top:8px;border:1px solid #b8c5b7;border-radius:12px;font:inherit}button{background:#36584a;color:white;cursor:pointer}button:disabled{opacity:.6}a{color:#36584a}[aria-invalid="true"]{border-color:#EB6472}.field-error{color:#C73546;margin:6px 0;font-size:14px}`;
 function page(title: string, content: string) {
   return `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>${title} · Create For Christ</title><style>${style}</style></head><body><main><p>CREATE FOR CHRIST</p>${content}</main></body></html>`;
 }
@@ -43,26 +44,18 @@ export function registerAuthPages(app: FastifyInstance) {
         'Passwort zurücksetzen',
         `
     <h1>Dein neues Passwort.</h1><p>Wähle mindestens ${AUTH.minPasswordLength} Zeichen. Danach meldest du dich in der App erneut an.</p>
-    <form id="reset"><label for="password">Neues Passwort</label><input id="password" type="password" minlength="${AUTH.minPasswordLength}" maxlength="${AUTH.maxPasswordLength}" autocomplete="new-password" required>
-    <label for="confirm">Passwort wiederholen</label><input id="confirm" type="password" minlength="${AUTH.minPasswordLength}" maxlength="${AUTH.maxPasswordLength}" autocomplete="new-password" required>
-    <button id="submit" type="submit">Passwort speichern</button></form><p id="message" role="status"></p><script src="/auth/reset.js" defer></script>`
+    <div id="reset"></div><noscript>Bitte aktiviere JavaScript, um dein Passwort zurückzusetzen.</noscript><script src="${API_PATH.resetScript}" defer></script>`
       )
     )
   );
   app.get(API_PATH.resetScript, async (_request, reply) =>
-    reply.type('application/javascript').send(`
-    const form=document.getElementById('reset'),message=document.getElementById('message'),button=document.getElementById('submit');
-    const params=new URLSearchParams(location.search),token=params.get('token');
-    history.replaceState(null,'',location.pathname);
-    if(!token||params.has('error')){form.hidden=true;message.textContent='Dieser Link ist ungültig oder abgelaufen. Fordere in der App einen neuen Link an.';}
-    form.addEventListener('submit',async event=>{event.preventDefault();
-      const password=document.getElementById('password').value;
-      if(password!==document.getElementById('confirm').value){message.textContent='Die Passwörter stimmen nicht überein.';return;}
-      button.disabled=true;message.textContent='';
-      try{const response=await fetch('/api/auth/reset-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,newPassword:password})});
-        if(!response.ok)throw new Error();form.hidden=true;message.textContent='Passwort gespeichert. Du kannst dich jetzt in der App anmelden.';
-      }catch{message.textContent='Das Passwort konnte nicht geändert werden. Prüfe die Verbindung oder fordere einen neuen Link an.';}finally{button.disabled=false;}
-    });
-  `)
+    reply
+      .type('application/javascript')
+      .send(
+        await readFile(
+          new URL('../../../.generated/resetPassword.js', import.meta.url),
+          'utf8'
+        )
+      )
   );
 }

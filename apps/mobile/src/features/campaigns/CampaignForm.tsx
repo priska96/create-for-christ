@@ -12,6 +12,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
 import { Image, Text, View } from 'react-native';
 import {
   ApiError,
@@ -21,12 +22,17 @@ import {
 } from '../../api';
 import { apiUrl } from '../../authClient';
 import { DEAL_LABEL, MONEY, ROUTE } from '../../constants';
-import { fieldErrors, splitList } from '../../forms';
+import {
+  FORM_OPTIONS,
+  formResolver,
+  applyApiErrors,
+  splitList,
+} from '../../forms';
 import {
   Action,
   Check,
   Choice,
-  Field,
+  FormField,
   Notice,
   Page,
   SignOutAction,
@@ -35,86 +41,60 @@ import {
 import { layout, radii, spacing } from '../../ui/theme';
 
 export function CampaignForm({ initial }: { initial: CampaignDetail | null }) {
-  const [title, setTitle] = useState(initial?.title ?? '');
-  const [productName, setProductName] = useState(initial?.productName ?? '');
-  const [description, setDescription] = useState(initial?.description ?? '');
-  const [dealType, setDealType] = useState<'barter' | 'paid'>(
-    initial?.compensation.type ?? DEAL.barter
-  );
-  const [productValue, setProductValue] = useState(
-    initial?.compensation.type === DEAL.barter
-      ? String(initial.compensation.productValueMinor / MONEY.minorPerUnit)
-      : ''
-  );
-  const [amountPerReel, setAmountPerReel] = useState(
-    initial?.compensation.type === DEAL.paid
-      ? String(initial.compensation.amountPerReelMinor / MONEY.minorPerUnit)
-      : ''
-  );
-  const [currency, setCurrency] = useState(
-    initial?.currency ?? MONEY.defaultCurrency
-  );
-  const [reelCount, setReelCount] = useState(String(initial?.reelCount ?? 1));
-  const [reelLengthSeconds, setReelLengthSeconds] = useState(
-    initial?.reelLengthSeconds ? String(initial.reelLengthSeconds) : ''
-  );
-  const [creatorSlots, setCreatorSlots] = useState(
-    String(initial?.creatorSlots ?? 1)
-  );
-  const [contentDeadline, setContentDeadline] = useState(
-    initial?.contentDeadline?.slice(0, 10) ?? ''
-  );
-  const [shippingRequired, setShippingRequired] = useState(
-    initial?.shippingRequired ?? false
-  );
-  const [shippingNotes, setShippingNotes] = useState(
-    initial?.shippingNotes ?? ''
-  );
-  const [requiredMentions, setRequiredMentions] = useState(
-    initial?.requiredMentions.join(', ') ?? ''
-  );
-  const [minPostingDurationDays, setMinPostingDurationDays] = useState(
-    initial?.minPostingDurationDays
+  const defaultValues = {
+    title: initial?.title ?? '',
+    productName: initial?.productName ?? '',
+    description: initial?.description ?? '',
+    dealType: (initial?.compensation.type ?? DEAL.barter) as 'barter' | 'paid',
+    productValue:
+      initial?.compensation.type === DEAL.barter
+        ? String(initial.compensation.productValueMinor / MONEY.minorPerUnit)
+        : '',
+    amountPerReel:
+      initial?.compensation.type === DEAL.paid
+        ? String(initial.compensation.amountPerReelMinor / MONEY.minorPerUnit)
+        : '',
+    currency: initial?.currency ?? MONEY.defaultCurrency,
+    reelCount: String(initial?.reelCount ?? 1),
+    reelLengthSeconds: initial?.reelLengthSeconds
+      ? String(initial.reelLengthSeconds)
+      : '',
+    creatorSlots: String(initial?.creatorSlots ?? 1),
+    contentDeadline: initial?.contentDeadline?.slice(0, 10) ?? '',
+    shippingRequired: initial?.shippingRequired ?? false,
+    shippingNotes: initial?.shippingNotes ?? '',
+    requiredMentions: initial?.requiredMentions.join(', ') ?? '',
+    minPostingDurationDays: initial?.minPostingDurationDays
       ? String(initial.minPostingDurationDays)
-      : ''
-  );
-  const [usageDurationDays, setUsageDurationDays] = useState(
-    initial?.usageDurationDays ? String(initial.usageDurationDays) : ''
-  );
-  const [usageChannels, setUsageChannels] = useState(
-    initial?.usageChannels.join(', ') ?? ''
-  );
-  const [usagePaidAdsAllowed, setUsagePaidAdsAllowed] = useState(
-    initial?.usagePaidAdsAllowed ?? false
-  );
-  const [productImageUrl, setProductImageUrl] = useState(
-    initial?.productImageUrl ?? null
-  );
-  const [campaignId, setCampaignId] = useState(initial?.id ?? null);
-
-  const [busy, setBusy] = useState(false),
-    [error, setError] = useState(''),
-    [fields, setFields] = useState<Record<string, string>>({});
-  const [imageBusy, setImageBusy] = useState(false),
-    [imageError, setImageError] = useState('');
-
-  function toNumber(value: string): number | null {
-    const trimmed = value.trim();
-    if (!trimmed) return null;
-    return Number(trimmed);
-  }
-  function toMinor(value: string): number {
-    const normalized = value.trim().replace(',', '.');
-    return /^\d+(\.\d{1,2})?$/.test(normalized)
-      ? Math.round(Number(normalized) * MONEY.minorPerUnit)
-      : NaN;
-  }
-
-  async function submit() {
-    if (busy || imageBusy || initial?.status === CAMPAIGN_STATUS.closed) return;
-    setError('');
-    setFields({});
-    const input: CampaignInput = {
+      : '',
+    usageDurationDays: initial?.usageDurationDays
+      ? String(initial.usageDurationDays)
+      : '',
+    usageChannels: initial?.usageChannels.join(', ') ?? '',
+    usagePaidAdsAllowed: initial?.usagePaidAdsAllowed ?? false,
+  };
+  type FormValues = typeof defaultValues;
+  function toInput({
+    title,
+    productName,
+    description,
+    dealType,
+    productValue,
+    amountPerReel,
+    currency,
+    reelCount,
+    reelLengthSeconds,
+    creatorSlots,
+    contentDeadline,
+    shippingRequired,
+    shippingNotes,
+    requiredMentions,
+    minPostingDurationDays,
+    usageDurationDays,
+    usageChannels,
+    usagePaidAdsAllowed,
+  }: FormValues): CampaignInput {
+    return {
       title,
       productName,
       description,
@@ -127,7 +107,9 @@ export function CampaignForm({ initial }: { initial: CampaignDetail | null }) {
       reelLengthSeconds: toNumber(reelLengthSeconds),
       creatorSlots: toNumber(creatorSlots) ?? 0,
       contentDeadline: contentDeadline.trim()
-        ? `${contentDeadline.trim()}T00:00:00.000Z`
+        ? contentDeadline.trim() === initial?.contentDeadline?.slice(0, 10)
+          ? initial.contentDeadline
+          : `${contentDeadline.trim()}T00:00:00.000Z`
         : null,
       shippingRequired,
       shippingNotes,
@@ -137,17 +119,66 @@ export function CampaignForm({ initial }: { initial: CampaignDetail | null }) {
       usageChannels: splitList(usageChannels),
       usagePaidAdsAllowed,
     };
-    const result = campaignInputSchema.safeParse(input);
-    if (!result.success) {
-      setFields(fieldErrors(result.error.issues));
-      setError(MESSAGES.invalidFields);
-      return;
-    }
-    setBusy(true);
+  }
+  const fieldName = (path: string, values: FormValues) =>
+    path === 'compensation'
+      ? values.dealType === DEAL.barter
+        ? 'productValue'
+        : 'amountPerReel'
+      : path;
+  const {
+    control,
+    handleSubmit,
+    setValue,
+    clearErrors,
+    setError: setFieldError,
+    formState: { isSubmitting: busy },
+  } = useForm({
+    defaultValues,
+    ...FORM_OPTIONS,
+    resolver: formResolver<FormValues>(
+      (values) => campaignInputSchema.safeParse(toInput(values)),
+      fieldName
+    ),
+  });
+  const dealType = useWatch({ control, name: 'dealType' });
+  const shippingRequired = useWatch({ control, name: 'shippingRequired' });
+  const usagePaidAdsAllowed = useWatch({
+    control,
+    name: 'usagePaidAdsAllowed',
+  });
+  const [productImageUrl, setProductImageUrl] = useState(
+    initial?.productImageUrl ?? null
+  );
+  const [campaignId, setCampaignId] = useState(initial?.id ?? null);
+
+  const [error, setError] = useState('');
+  const [imageBusy, setImageBusy] = useState(false),
+    [imageError, setImageError] = useState('');
+
+  function toNumber(value: string): number | null {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    return /^\d+$/.test(trimmed) ? Number(trimmed) : NaN;
+  }
+  function toMinor(value: string): number {
+    const normalized = value.trim().replace(',', '.');
+    return /^\d+(\.\d{1,2})?$/.test(normalized)
+      ? Math.round(Number(normalized) * MONEY.minorPerUnit)
+      : NaN;
+  }
+
+  const disabled =
+    busy || imageBusy || initial?.status === CAMPAIGN_STATUS.closed;
+
+  async function submit(values: FormValues) {
+    if (imageBusy || initial?.status === CAMPAIGN_STATUS.closed) return;
+    setError('');
+    const result = campaignInputSchema.parse(toInput(values));
     try {
       const saved = campaignId
-        ? await updateCampaign(campaignId, result.data)
-        : await createCampaign(result.data);
+        ? await updateCampaign(campaignId, result)
+        : await createCampaign(result);
       setCampaignId(saved.id);
       if (!initial)
         router.replace({
@@ -155,9 +186,10 @@ export function CampaignForm({ initial }: { initial: CampaignDetail | null }) {
           params: { id: saved.id },
         });
     } catch (cause) {
+      applyApiErrors(cause, setFieldError, values, (path) =>
+        fieldName(path, values)
+      );
       setError(cause instanceof ApiError ? cause.message : MESSAGES.connection);
-    } finally {
-      setBusy(false);
     }
   }
 
@@ -218,30 +250,27 @@ export function CampaignForm({ initial }: { initial: CampaignDetail | null }) {
       subtitle="Titel, Produkt, Vergütung, Leistung und Bedingungen für deine Reel-Kooperation."
     >
       <Text style={ui.label}>Kampagne</Text>
-      <Field
+      <FormField
         label="Titel"
-        value={title}
-        onChangeText={setTitle}
+        control={control}
+        name="title"
         maxLength={LIMITS.shortText}
-        error={fields.title}
-        editable={!busy}
+        editable={!disabled}
       />
-      <Field
+      <FormField
         label="Produktname"
-        value={productName}
-        onChangeText={setProductName}
+        control={control}
+        name="productName"
         maxLength={LIMITS.shortText}
-        error={fields.productName}
-        editable={!busy}
+        editable={!disabled}
       />
-      <Field
+      <FormField
         label="Reel-Briefing"
-        value={description}
-        onChangeText={setDescription}
+        control={control}
+        name="description"
         multiline
         maxLength={LIMITS.campaignDescription}
-        error={fields.description}
-        editable={!busy}
+        editable={!disabled}
       />
       {campaignId ? (
         <View style={{ gap: spacing.sm }}>
@@ -278,130 +307,127 @@ export function CampaignForm({ initial }: { initial: CampaignDetail | null }) {
         {Object.values(DEAL).map((value) => (
           <Choice
             key={value}
-            disabled={busy}
+            disabled={disabled}
             checked={dealType === value}
-            onPress={() => setDealType(value)}
+            onPress={() => {
+              clearErrors(['productValue', 'amountPerReel']);
+              setValue('dealType', value, { shouldDirty: true });
+            }}
             label={DEAL_LABEL[value]}
           />
         ))}
       </View>
       {dealType === DEAL.barter ? (
-        <Field
+        <FormField
           label="Produktwert (in Hauptwährungseinheit)"
-          value={productValue}
-          onChangeText={setProductValue}
+          control={control}
+          name="productValue"
           keyboardType="decimal-pad"
-          error={fields.compensation}
-          editable={!busy}
+          editable={!disabled}
         />
       ) : (
-        <Field
+        <FormField
           label="Honorar pro Reel (in Hauptwährungseinheit)"
-          value={amountPerReel}
-          onChangeText={setAmountPerReel}
+          control={control}
+          name="amountPerReel"
           keyboardType="decimal-pad"
-          error={fields.compensation}
-          editable={!busy}
+          editable={!disabled}
         />
       )}
-      <Field
+      <FormField
         label="Währung (z. B. EUR)"
-        value={currency}
-        onChangeText={setCurrency}
+        control={control}
+        name="currency"
         autoCapitalize="characters"
         maxLength={3}
-        error={fields.currency}
-        editable={!busy}
+        editable={!disabled}
       />
 
       <Text style={ui.label}>Leistung</Text>
-      <Field
+      <FormField
         label="Anzahl Reels"
-        value={reelCount}
-        onChangeText={setReelCount}
+        control={control}
+        name="reelCount"
         keyboardType="number-pad"
-        error={fields.reelCount}
-        editable={!busy}
+        editable={!disabled}
       />
-      <Field
+      <FormField
         label="Länge pro Reel in Sekunden (optional)"
-        value={reelLengthSeconds}
-        onChangeText={setReelLengthSeconds}
+        control={control}
+        name="reelLengthSeconds"
         keyboardType="number-pad"
-        error={fields.reelLengthSeconds}
-        editable={!busy}
+        editable={!disabled}
       />
-      <Field
+      <FormField
         label="Veröffentlichungstermin (JJJJ-MM-TT, optional)"
-        value={contentDeadline}
-        onChangeText={setContentDeadline}
+        control={control}
+        name="contentDeadline"
         placeholder="2026-10-01"
-        error={fields.contentDeadline}
-        editable={!busy}
+        editable={!disabled}
       />
-      <Field
+      <FormField
         label="Anzahl gesuchter Creator"
-        value={creatorSlots}
-        onChangeText={setCreatorSlots}
+        control={control}
+        name="creatorSlots"
         keyboardType="number-pad"
-        error={fields.creatorSlots}
-        editable={!busy}
+        editable={!disabled}
       />
 
       <Text style={ui.label}>Bedingungen</Text>
       <Check
-        disabled={busy}
+        disabled={disabled}
         checked={shippingRequired}
-        onPress={() => setShippingRequired((value) => !value)}
+        onPress={() =>
+          setValue('shippingRequired', !shippingRequired, { shouldDirty: true })
+        }
         label="Versand erforderlich"
       />
-      <Field
+      <FormField
         label="Versandhinweise (optional)"
-        value={shippingNotes}
-        onChangeText={setShippingNotes}
+        control={control}
+        name="shippingNotes"
         multiline
         maxLength={LIMITS.shippingNotes}
-        error={fields.shippingNotes}
-        editable={!busy}
+        editable={!disabled}
       />
-      <Field
+      <FormField
         label="Erforderliche Markierungen (Instagram-Namen, mit Komma trennen)"
-        value={requiredMentions}
-        onChangeText={setRequiredMentions}
+        control={control}
+        name="requiredMentions"
         autoCapitalize="none"
         autoCorrect={false}
         placeholder="deinebrand"
-        error={fields.requiredMentions}
-        editable={!busy}
+        editable={!disabled}
       />
-      <Field
+      <FormField
         label="Mindestdauer der Veröffentlichung in Tagen (optional)"
-        value={minPostingDurationDays}
-        onChangeText={setMinPostingDurationDays}
+        control={control}
+        name="minPostingDurationDays"
         keyboardType="number-pad"
-        error={fields.minPostingDurationDays}
-        editable={!busy}
+        editable={!disabled}
       />
-      <Field
+      <FormField
         label="Nutzungsrechte: Dauer in Tagen (optional)"
-        value={usageDurationDays}
-        onChangeText={setUsageDurationDays}
+        control={control}
+        name="usageDurationDays"
         keyboardType="number-pad"
-        error={fields.usageDurationDays}
-        editable={!busy}
+        editable={!disabled}
       />
-      <Field
+      <FormField
         label="Nutzungsrechte: Kanäle (mit Komma trennen)"
-        value={usageChannels}
-        onChangeText={setUsageChannels}
+        control={control}
+        name="usageChannels"
         placeholder="Instagram Feed, Instagram Story"
-        error={fields.usageChannels}
-        editable={!busy}
+        editable={!disabled}
       />
       <Check
-        disabled={busy}
+        disabled={disabled}
         checked={usagePaidAdsAllowed}
-        onPress={() => setUsagePaidAdsAllowed((value) => !value)}
+        onPress={() =>
+          setValue('usagePaidAdsAllowed', !usagePaidAdsAllowed, {
+            shouldDirty: true,
+          })
+        }
         label="Verwendung als bezahlte Werbung erlaubt"
       />
 
@@ -409,18 +435,18 @@ export function CampaignForm({ initial }: { initial: CampaignDetail | null }) {
       <Action
         busy={busy}
         disabled={imageBusy || initial?.status === CAMPAIGN_STATUS.closed}
-        onPress={() => void submit()}
+        onPress={() => void handleSubmit(submit)()}
       >
         {campaignId ? 'Änderungen speichern' : 'Als Entwurf speichern'}
       </Action>
       <Action
         secondary
-        disabled={busy}
+        disabled={disabled}
         onPress={() => router.replace(ROUTE.brandCampaigns)}
       >
         Zurück zur Übersicht
       </Action>
-      <SignOutAction disabled={busy} />
+      <SignOutAction disabled={disabled} />
     </Page>
   );
 }

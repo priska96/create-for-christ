@@ -12,3 +12,5 @@ export * from './IconButton';
 export * from './EmptyState';
 export * from './DetailSheet';
 export * from './CampaignCover';
+
+export { FormField } from './FormField';

@@ -30,7 +30,6 @@ export function CreatorFeed() {
   );
   const [confirming, setConfirming] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
-  const [pitch, setPitch] = useState('');
   const [notice, setNotice] = useState('');
   const mutation = useMutation();
   const fetchPage = useCallback(
@@ -48,7 +47,6 @@ export function CreatorFeed() {
   function complete(message: string) {
     page.setItems((items) => items.filter((item) => item.id !== campaign?.id));
     setConfirming(false);
-    setPitch('');
     setNotice(message);
   }
   function interested() {
@@ -65,7 +63,6 @@ export function CreatorFeed() {
   }
   function reload() {
     setConfirming(false);
-    setPitch('');
     setNotice('');
     mutation.clearError();
     page.reload();
@@ -159,32 +156,32 @@ export function CreatorFeed() {
               </Action>
             </DetailSheet>
           )}
-          <ApplicationConfirmation
-            campaign={campaign}
-            visible={confirming}
-            pitch={pitch}
-            busy={mutation.busy}
-            error={mutation.error}
-            onPitchChange={setPitch}
-            onCancel={() => {
-              setConfirming(false);
-              mutation.clearError();
-            }}
-            onSubmit={() =>
-              void mutation.run(
-                () =>
-                  applyToCampaign(campaign.id, {
-                    pitch,
-                    campaignVersion: campaign.version,
-                  }),
-                () =>
-                  complete(
-                    'Bewerbung gesendet. Die Brand kann dir jetzt zusagen.'
-                  )
-              )
-            }
-            onReload={reload}
-          />
+          {confirming && (
+            <ApplicationConfirmation
+              campaign={campaign}
+              visible={confirming}
+              busy={mutation.busy}
+              error={mutation.error}
+              onCancel={() => {
+                setConfirming(false);
+                mutation.clearError();
+              }}
+              onSubmit={(pitch) =>
+                mutation.run(
+                  () =>
+                    applyToCampaign(campaign.id, {
+                      pitch,
+                      campaignVersion: campaign.version,
+                    }),
+                  () =>
+                    complete(
+                      'Bewerbung gesendet. Die Brand kann dir jetzt zusagen.'
+                    )
+                )
+              }
+              onReload={reload}
+            />
+          )}
         </>
       )}
       {!campaign && !page.loading && !page.error && (

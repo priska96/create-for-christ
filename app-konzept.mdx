@@ -1,6 +1,6 @@
 # Create For Christ – App-Konzept
 
-Stand: 9. September 2026
+Stand: 13. September 2026
 
 ## Verbindlicher aktueller Stand
 
@@ -11,6 +11,10 @@ Gewählt ist eine eigene kleine Node.js-/TypeScript-API mit PostgreSQL und einer
 Die Projektgrundlage verwendet npm Workspaces, Fastify, gemeinsame Zod-API-Verträge, versionierte SQL-Migrationen und PostgreSQL per Docker Compose. Die Expo-App bietet Registrierung, E-Mail-Bestätigung, Login/Logout, Passwort-Reset sowie einmaliges Onboarding und Bearbeitung eigener Creator-/Brand-Profile. Better Auth übernimmt die Authentifizierung; eigene Profil-Endpunkte prüfen die Sitzung und Eigentümerschaft serverseitig. Die Vorschau-Rollenwahl bleibt vom tatsächlichen Account getrennt. Brands verwalten eigene Kampagnen als Entwurf, veröffentlicht oder geschlossen, einschließlich Produktbild-Upload; der Server beschränkt jede Änderung auf die eigene Brand, und der Creator-Feed zeigt ausschließlich veröffentlichte, noch offene Kampagnen. Der persönliche Creator-Feed, dauerhafte Links-Swipes, bestätigte Bewerbungen mit optionalem Pitch, Statuslisten und atomare Zusagen/Absagen sind implementiert. Chat und beidseitige Vereinbarungsbestätigung folgen als nächster Meilenstein. Die stabilen Profil-IDs sind von künftigen Auth-Anbietern getrennt.
 
 Dieses Dokument hält den bisherigen Brainstorming-Stand fest. Bestätigte Anforderungen sind von Vorschlägen und offenen Entscheidungen getrennt. Der App-Name wurde inzwischen als Create For Christ festgelegt.
+
+## Formulare und Validierung
+
+Alle Formulare nutzen React Hook Form. Fehlerhafte Eingabefelder erhalten einen roten Rahmen und eine deutsche Fehlermeldung direkt am Feld. Das gilt für Authentifizierung einschließlich Passwort-Reset, Creator-/Brand-Profile, Kampagnen und Bewerbungs-Pitch. Gemeinsame Zod-Schemas und unveränderte serverseitige Validierung sichern die Daten unabhängig von der UI ab.
 
 ## Bestätigte Anforderungen
 

@@ -10,7 +10,8 @@
       "node"
     ],
     "noUnusedLocals": true,
-    "noUnusedParameters": true
+    "noUnusedParameters": true,
+    "jsx": "react-jsx"
   },
   "include": [
     "src",

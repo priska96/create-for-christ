@@ -9,16 +9,23 @@ import {
 } from '@create-for-christ/contracts';
 import { router } from 'expo-router';
 import { useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
 import { Text, View } from 'react-native';
+import { colors, spacing, radii } from '../../ui/theme';
 import { RoleOption } from '../../ui/RoleOption';
 import { saveProfile } from '../../api';
 import { DEAL_LABEL, ROUTE } from '../../constants';
-import { fieldErrors, splitList } from '../../forms';
+import {
+  FORM_OPTIONS,
+  formResolver,
+  applyApiErrors,
+  splitList,
+} from '../../forms';
 import {
   Action,
   Avatar,
   Check,
-  Field,
+  FormField,
   Notice,
   Page,
   SignOutAction,
@@ -33,97 +40,112 @@ export function ProfileForm({
   name: string;
 }) {
   const details = initial?.details;
-  const [role, setRole] = useState<'creator' | 'brand'>(
-    details?.role ?? ROLE.creator
-  );
-  const [displayName, setDisplayName] = useState(details?.displayName ?? name);
-  const [location, setLocation] = useState(details?.location ?? '');
-  const [bio, setBio] = useState(
-    details?.role === ROLE.creator ? details.bio : ''
-  );
-  const [instagram, setInstagram] = useState(
-    details?.role === ROLE.creator ? details.instagramHandle : ''
-  );
-  const [languages, setLanguages] = useState(
-    details?.role === ROLE.creator ? details.languages.join(', ') : 'Deutsch'
-  );
-  const [topics, setTopics] = useState(
-    details?.role === ROLE.creator ? details.topics.join(', ') : ''
-  );
-  const [portfolio, setPortfolio] = useState(
-    details?.role === ROLE.creator ? details.portfolioUrls.join('\n') : ''
-  );
-  const [deals, setDeals] = useState<('barter' | 'paid')[]>(
-    details?.role === ROLE.creator
+  const defaultValues = {
+    role: (details?.role ?? ROLE.creator) as 'creator' | 'brand',
+    displayName: details?.displayName ?? name,
+    location: details?.location ?? '',
+    bio: details?.role === ROLE.creator ? details.bio : '',
+    instagram: details?.role === ROLE.creator ? details.instagramHandle : '',
+    languages:
+      details?.role === ROLE.creator ? details.languages.join(', ') : 'Deutsch',
+    topics: details?.role === ROLE.creator ? details.topics.join(', ') : '',
+    portfolio:
+      details?.role === ROLE.creator ? details.portfolioUrls.join('\n') : '',
+    deals: (details?.role === ROLE.creator
       ? details.dealPreferences
-      : ['barter', 'paid']
-  );
-  const [brandName, setBrandName] = useState(
-    details?.role === ROLE.brand ? details.brandName : ''
-  );
-  const [description, setDescription] = useState(
-    details?.role === ROLE.brand ? details.description : ''
-  );
-  const [website, setWebsite] = useState(
-    details?.role === ROLE.brand ? details.website : ''
-  );
-  const [industry, setIndustry] = useState(
-    details?.role === ROLE.brand ? details.industry : ''
-  );
-  const [busy, setBusy] = useState(false),
-    [error, setError] = useState(''),
-    [fields, setFields] = useState<Record<string, string>>({});
+      : ['barter', 'paid']) as ('barter' | 'paid')[],
+    brandName: details?.role === ROLE.brand ? details.brandName : '',
+    description: details?.role === ROLE.brand ? details.description : '',
+    website: details?.role === ROLE.brand ? details.website : '',
+    industry: details?.role === ROLE.brand ? details.industry : '',
+  };
+  type FormValues = typeof defaultValues;
+  function toInput({
+    role,
+    displayName,
+    location,
+    bio,
+    instagram,
+    languages,
+    topics,
+    portfolio,
+    deals,
+    brandName,
+    description,
+    website,
+    industry,
+  }: FormValues): ProfileInput {
+    return role === ROLE.creator
+      ? {
+          role,
+          displayName,
+          bio,
+          instagramHandle: instagram.trim().replace(/^@/, ''),
+          location,
+          languages: splitList(languages),
+          topics: splitList(topics),
+          dealPreferences: deals,
+          portfolioUrls: splitList(portfolio, '\n'),
+        }
+      : {
+          role,
+          displayName,
+          brandName,
+          description,
+          website,
+          industry,
+          location,
+        };
+  }
+  const fieldName = (path: string) =>
+    ({
+      instagramHandle: 'instagram',
+      portfolioUrls: 'portfolio',
+      dealPreferences: 'deals',
+    })[path] ?? path;
+  const {
+    control,
+    handleSubmit,
+    setValue,
+    clearErrors,
+    setError: setFieldError,
+    formState: { errors: fields, isSubmitting: busy },
+  } = useForm({
+    defaultValues,
+    ...FORM_OPTIONS,
+    resolver: formResolver<FormValues>(
+      (values) => profileInputSchema.safeParse(toInput(values)),
+      fieldName
+    ),
+  });
+  const role = useWatch({ control, name: 'role' });
+  const displayName = useWatch({ control, name: 'displayName' });
+  const brandName = useWatch({ control, name: 'brandName' });
+  const deals = useWatch({ control, name: 'deals' });
+  const [error, setError] = useState('');
   function toggleDeal(deal: 'barter' | 'paid') {
-    setDeals((values) =>
-      values.includes(deal)
-        ? values.filter((value) => value !== deal)
-        : [...values, deal]
+    setValue(
+      'deals',
+      deals.includes(deal)
+        ? deals.filter((value) => value !== deal)
+        : [...deals, deal],
+      { shouldValidate: true, shouldDirty: true }
     );
   }
-  async function submit() {
+  async function submit(values: FormValues) {
     setError('');
-    setFields({});
 
-    const input: ProfileInput =
-      role === ROLE.creator
-        ? {
-            role,
-            displayName,
-            bio,
-            instagramHandle: instagram.replace(/^@/, ''),
-            location,
-            languages: splitList(languages),
-            topics: splitList(topics),
-            dealPreferences: deals,
-            portfolioUrls: splitList(portfolio, '\n'),
-          }
-        : {
-            role,
-            displayName,
-            brandName,
-            description,
-            website,
-            industry,
-            location,
-          };
-    const result = profileInputSchema.safeParse(input);
-    if (!result.success) {
-      setFields(fieldErrors(result.error.issues));
-      setError(MESSAGES.invalidFields);
-      return;
-    }
-    setBusy(true);
+    const result = profileInputSchema.parse(toInput(values));
     try {
-      await saveProfile(result.data);
+      await saveProfile(result);
       router.replace(ROUTE.home);
     } catch (cause) {
+      applyApiErrors(cause, setFieldError, values, fieldName);
       setError(
         cause instanceof Error && cause.name !== 'AbortError'
           ? cause.message
           : MESSAGES.connection
       );
-    } finally {
-      setBusy(false);
     }
   }
   return (
@@ -151,7 +173,10 @@ export function ProfileForm({
               role={value}
               selected={role === value}
               disabled={busy}
-              onPress={() => setRole(value)}
+              onPress={() => {
+                clearErrors();
+                setValue('role', value, { shouldDirty: true });
+              }}
             />
           ))}
         </View>
@@ -166,59 +191,64 @@ export function ProfileForm({
           name={role === ROLE.brand ? brandName || displayName : displayName}
         />
       </View>
-      <Field
+      <FormField
         label={
           role === ROLE.brand ? 'Dein Name / Ansprechpartner' : 'Dein Name'
         }
-        value={displayName}
-        onChangeText={setDisplayName}
+        control={control}
+        name="displayName"
         maxLength={LIMITS.shortText}
-        error={fields.displayName}
         editable={!busy}
       />
       {role === ROLE.creator ? (
         <>
-          <Field
+          <FormField
             label="Instagram-Nutzername"
-            value={instagram}
-            onChangeText={setInstagram}
+            control={control}
+            name="instagram"
             autoCapitalize="none"
             autoCorrect={false}
             placeholder="dein.name"
-            error={fields.instagramHandle}
             editable={!busy}
           />
           <Text style={ui.body}>
             Dein Instagram-Kanal muss öffentlich sein. Hier veröffentlichst du
             deine Reels.
           </Text>
-          <Field
+          <FormField
             label="Über dich"
-            value={bio}
-            onChangeText={setBio}
+            control={control}
+            name="bio"
             multiline
             maxLength={LIMITS.creatorBio}
-            error={fields.bio}
             editable={!busy}
           />
-          <Field
+          <FormField
             label="Sprachen (mit Komma trennen)"
-            value={languages}
-            onChangeText={setLanguages}
+            control={control}
+            name="languages"
             placeholder="Deutsch, Englisch"
-            error={fields.languages}
             editable={!busy}
           />
-          <Field
+          <FormField
             label="Themen (mit Komma trennen)"
-            value={topics}
-            onChangeText={setTopics}
+            control={control}
+            name="topics"
             placeholder="Beauty, Food, Fitness"
-            error={fields.topics}
             editable={!busy}
           />
           <Text style={ui.label}>Welche Deals interessieren dich?</Text>
-          <View style={ui.field}>
+          <View
+            style={[
+              ui.field,
+              fields.deals && {
+                borderWidth: spacing.hairline,
+                borderColor: colors.danger,
+                borderRadius: radii.small,
+                padding: spacing.sm,
+              },
+            ]}
+          >
             {Object.values(DEAL).map((deal) => (
               <Check
                 key={deal}
@@ -229,72 +259,68 @@ export function ProfileForm({
               />
             ))}
           </View>
-          {fields.dealPreferences && (
-            <Text style={ui.error}>{fields.dealPreferences}</Text>
+          {fields.deals && (
+            <Text accessibilityRole="alert" style={ui.error}>
+              {fields.deals.message}
+            </Text>
           )}
-          <Field
+          <FormField
             label="Reel-Portfolio (optional, ein Link pro Zeile)"
-            value={portfolio}
-            onChangeText={setPortfolio}
+            control={control}
+            name="portfolio"
             multiline
             autoCapitalize="none"
             autoCorrect={false}
             placeholder="https://www.instagram.com/reel/…/"
-            error={fields.portfolioUrls}
             editable={!busy}
           />
         </>
       ) : (
         <>
-          <Field
+          <FormField
             label="Name deiner Brand"
-            value={brandName}
-            onChangeText={setBrandName}
+            control={control}
+            name="brandName"
             maxLength={LIMITS.shortText}
-            error={fields.brandName}
             editable={!busy}
           />
-          <Field
+          <FormField
             label="Über deine Brand"
-            value={description}
-            onChangeText={setDescription}
+            control={control}
+            name="description"
             multiline
             maxLength={LIMITS.brandDescription}
-            error={fields.description}
             editable={!busy}
           />
-          <Field
+          <FormField
             label="Branche"
-            value={industry}
-            onChangeText={setIndustry}
+            control={control}
+            name="industry"
             maxLength={LIMITS.shortText}
             placeholder="z. B. Kosmetik"
-            error={fields.industry}
             editable={!busy}
           />
-          <Field
+          <FormField
             label="Website (optional)"
-            value={website}
-            onChangeText={setWebsite}
+            control={control}
+            name="website"
             keyboardType="url"
             autoCapitalize="none"
             autoCorrect={false}
             placeholder="https://deine-brand.de"
-            error={fields.website}
             editable={!busy}
           />
         </>
       )}
-      <Field
+      <FormField
         label="Standort (optional)"
-        value={location}
-        onChangeText={setLocation}
+        control={control}
+        name="location"
         maxLength={LIMITS.optionalText}
-        error={fields.location}
         editable={!busy}
       />
       <Notice message={error} error />
-      <Action busy={busy} onPress={() => void submit()}>
+      <Action busy={busy} onPress={() => void handleSubmit(submit)()}>
         {initial ? 'Änderungen speichern' : 'Profil erstellen'}
       </Action>
       {initial && (

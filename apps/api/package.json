@@ -5,25 +5,32 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && npm run build:auth-page",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test test/*.test.ts",
     "db:migrate": "tsx src/migrate.ts",
     "test:integration": "tsx --test test/*.integration.ts",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "build:auth-page": "node scripts/buildAuthPage.mjs",
+    "predev": "npm run build:auth-page",
+    "pretest:integration": "npm run build:auth-page"
   },
   "dependencies": {
     "@better-auth/expo": "^1.7.3",
     "@create-for-christ/contracts": "0.1.0",
     "@fastify/cors": "^11.0.0",
     "@fastify/rate-limit": "^10.3.0",
+    "@hookform/resolvers": "^5.9.1",
     "better-auth": "^1.7.3",
     "dotenv": "^17.2.0",
     "fastify": "^5.6.0",
     "nodemailer": "^10.0.1",
     "pg": "^8.16.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "react-hook-form": "^7.87.0",
     "sharp": "^0.35.4",
     "zod": "^4.1.0"
   },
@@ -31,6 +38,9 @@
     "@types/node": "^22.0.0",
     "@types/nodemailer": "^8.0.1",
     "@types/pg": "^8.15.0",
+    "@types/react": "~19.2.2",
+    "@types/react-dom": "^19.2.5",
+    "esbuild": "^0.28.2",
     "tsx": "^4.20.0"
   }
 }

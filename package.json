@@ -23,8 +23,8 @@
     "check": "npm run typecheck && npm run lint && npm test && npm run build",
     "test:integration": "npm run build -w @create-for-christ/contracts && npm run test:integration -w @create-for-christ/api",
     "setup": "node scripts/setup-env.mjs",
-    "format": "prettier --write \"apps/api/{src,test}/**/*.ts\" \"apps/mobile/{app,src}/**/*.{ts,tsx}\" apps/mobile/App.tsx \"packages/contracts/src/*.ts\"",
-    "format:check": "prettier --check \"apps/api/{src,test}/**/*.ts\" \"apps/mobile/{app,src}/**/*.{ts,tsx}\" apps/mobile/App.tsx \"packages/contracts/src/*.ts\"",
+    "format": "prettier --write \"apps/api/{src,test}/**/*.{ts,tsx}\" \"apps/mobile/{app,src}/**/*.{ts,tsx}\" apps/mobile/App.tsx \"packages/contracts/src/*.ts\"",
+    "format:check": "prettier --check \"apps/api/{src,test}/**/*.{ts,tsx}\" \"apps/mobile/{app,src}/**/*.{ts,tsx}\" apps/mobile/App.tsx \"packages/contracts/src/*.ts\"",
     "lint": "eslint scripts && npm run lint --workspaces --if-present",
     "lint:fix": "eslint scripts --fix && npm run lint:fix --workspaces --if-present"
   },

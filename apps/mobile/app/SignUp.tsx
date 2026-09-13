@@ -1,38 +1,47 @@
-import { API_PATH, AUTH, LIMITS, MESSAGES } from '@create-for-christ/contracts';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { FORM_OPTIONS, applyAuthErrors } from '../src/forms';
+import {
+  signUpFormSchema,
+  API_PATH,
+  AUTH,
+  LIMITS,
+  MESSAGES,
+} from '@create-for-christ/contracts';
 import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
 import { apiUrl, authClient, authError } from '../src/authClient';
 import { ROUTE } from '../src/constants';
-import { Action, Field, Notice, Page } from '../src/ui';
+import { Action, FormField, Notice, Page } from '../src/ui';
 
 export default function SignUp() {
   const { data: session } = authClient.useSession();
-  const [name, setName] = useState(''),
-    [email, setEmail] = useState(''),
-    [password, setPassword] = useState(''),
-    [confirm, setConfirm] = useState('');
-  const [busy, setBusy] = useState(false),
-    [error, setError] = useState(''),
-    [sent, setSent] = useState(false);
+  const {
+    control,
+    setError: setFieldError,
+    handleSubmit,
+    resetField,
+    formState: { isSubmitting },
+  } = useForm({
+    ...FORM_OPTIONS,
+    resolver: zodResolver(signUpFormSchema),
+    defaultValues: { name: '', email: '', password: '', confirm: '' },
+  });
+  const busy = isSubmitting;
+  const [error, setError] = useState('');
+  const [sent, setSent] = useState(false);
   if (session) return <Redirect href={ROUTE.home} />;
-  async function submit() {
+  async function submit({
+    name,
+    email,
+    password,
+  }: {
+    name: string;
+    email: string;
+    password: string;
+    confirm: string;
+  }) {
     setError('');
-    if (!name.trim() || !email.trim()) {
-      setError('Bitte Name und E-Mail-Adresse ausfüllen.');
-      return;
-    }
-    if (
-      password.length < AUTH.minPasswordLength ||
-      password.length > AUTH.maxPasswordLength
-    ) {
-      setError('Wähle ein Passwort mit 10 bis 128 Zeichen.');
-      return;
-    }
-    if (password !== confirm) {
-      setError('Die Passwörter stimmen nicht überein.');
-      return;
-    }
-    setBusy(true);
     try {
       const result = await authClient.signUp.email({
         name: name.trim(),
@@ -41,16 +50,18 @@ export default function SignUp() {
         callbackURL: `${apiUrl}${API_PATH.verified}`,
       });
       if (result.error) {
+        applyAuthErrors(result.error.code, setFieldError, [
+          'email',
+          'password',
+        ]);
         setError(authError(result.error.code));
         return;
       }
-      setPassword('');
-      setConfirm('');
+      resetField('password');
+      resetField('confirm');
       setSent(true);
     } catch {
       setError(MESSAGES.connection);
-    } finally {
-      setBusy(false);
     }
   }
   if (sent)
@@ -70,36 +81,41 @@ export default function SignUp() {
       title="Deine Geschichte beginnt hier."
       subtitle="Erstelle dein Konto. Dein Creator- oder Brand-Profil richtest du direkt nach der Bestätigung ein."
     >
-      <Field
+      <FormField
         label="Dein Name"
-        value={name}
-        onChangeText={setName}
+        control={control}
+        name="name"
+        editable={!busy}
         maxLength={LIMITS.shortText}
         autoComplete="name"
       />
-      <Field
+      <FormField
         label="E-Mail-Adresse"
-        value={email}
-        onChangeText={setEmail}
+        control={control}
+        name="email"
+        editable={!busy}
         keyboardType="email-address"
         autoCapitalize="none"
         autoCorrect={false}
         autoComplete="email"
       />
-      <Field
+      <FormField
         label="Passwort (mindestens 10 Zeichen)"
-        value={password}
-        onChangeText={setPassword}
+        control={control}
+        name="password"
+        deps={['confirm']}
+        editable={!busy}
         secureTextEntry
         autoCorrect={false}
         autoCapitalize="none"
         autoComplete="new-password"
         maxLength={AUTH.maxPasswordLength}
       />
-      <Field
+      <FormField
         label="Passwort wiederholen"
-        value={confirm}
-        onChangeText={setConfirm}
+        control={control}
+        name="confirm"
+        editable={!busy}
         secureTextEntry
         autoCorrect={false}
         autoCapitalize="none"
@@ -107,7 +123,7 @@ export default function SignUp() {
         maxLength={AUTH.maxPasswordLength}
       />
       <Notice message={error} error />
-      <Action busy={busy} onPress={() => void submit()}>
+      <Action busy={busy} onPress={() => void handleSubmit(submit)()}>
         Konto erstellen
       </Action>
       <Action

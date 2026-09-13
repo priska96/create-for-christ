@@ -4,7 +4,7 @@ import globals from 'globals';
 import prettier from 'eslint-config-prettier';
 
 export default tseslint.config(
-  { ignores: ['dist/**'] },
+  { ignores: ['dist/**', '.generated/**'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
@@ -16,6 +16,7 @@ export default tseslint.config(
       ],
     },
   },
+  { files: ['src/browser/**/*.tsx'], languageOptions: { globals: globals.browser } },
   prettier,
   {
     files: ['**/*.ts', '**/*.tsx'],

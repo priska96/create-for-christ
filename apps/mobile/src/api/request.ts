@@ -6,7 +6,8 @@ import { TIMEOUT } from '../constants';
 export class ApiError extends Error {
   constructor(
     public status: number,
-    message: string
+    message: string,
+    public issues: { path: string; message: string }[] = []
   ) {
     super(message);
   }
@@ -48,7 +49,18 @@ export async function authenticatedRequest(
         response.status,
         typeof result.error === 'string'
           ? result.error
-          : 'Die Anfrage ist fehlgeschlagen.'
+          : 'Die Anfrage ist fehlgeschlagen.',
+        Array.isArray(result.issues)
+          ? result.issues.filter(
+              (issue: unknown): issue is { path: string; message: string } =>
+                typeof issue === 'object' &&
+                issue !== null &&
+                'path' in issue &&
+                typeof issue.path === 'string' &&
+                'message' in issue &&
+                typeof issue.message === 'string'
+            )
+          : []
       );
     return result;
   } finally {
