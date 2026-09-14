@@ -1,7 +1,7 @@
-import type { Campaign, DealType } from '@create-for-christ/contracts';
+import type { DealType } from '@create-for-christ/contracts';
 import { DEAL, ROLE } from '@create-for-christ/contracts';
-import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { router } from 'expo-router';
+import { useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -11,9 +11,9 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getCampaigns } from './src/api';
+import { useDiscovery } from './src/hooks/useCampaignQueries';
 import { apiUrl } from './src/authClient';
-import { FILTER_ALL, MONEY, ROUTE, TIMEOUT } from './src/constants';
+import { FILTER_ALL, MONEY, ROUTE } from './src/constants';
 import { useSignOut } from './src/hooks';
 import { styles } from './src/features/discovery/styles';
 import { colors, layout, radii } from './src/ui/theme';
@@ -37,34 +37,9 @@ export default function App({
   const [filter, setFilter] = useState<DealType | typeof FILTER_ALL>(
     FILTER_ALL
   );
-  const [reload, setReload] = useState(0);
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
-  useFocusEffect(
-    useCallback(() => {
-      const controller = new AbortController();
-      let active = true;
-      const timer = setTimeout(() => controller.abort(), TIMEOUT.discoveryMs);
-      setState('loading');
-      getCampaigns(filter, controller.signal)
-        .then((data) => {
-          if (active) {
-            setCampaigns(data);
-            setState('ready');
-          }
-        })
-        .catch(() => {
-          if (active) setState('error');
-        })
-        .finally(() => clearTimeout(timer));
-      return () => {
-        active = false;
-        clearTimeout(timer);
-        controller.abort();
-      };
-      // eslint-disable-next-line react-hooks/exhaustive-deps -- reload is a manual refetch trigger, not read in the body.
-    }, [filter, reload])
-  );
+  const query = useDiscovery(filter);
+  const campaigns = query.data ?? [];
+  const state = query.isPending ? 'loading' : query.isError ? 'error' : 'ready';
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -212,7 +187,7 @@ export default function App({
                 </Text>
                 <Pressable
                   accessibilityRole="button"
-                  onPress={() => setReload((value) => value + 1)}
+                  onPress={() => void query.refetch()}
                   style={styles.button}
                 >
                   <Text style={styles.buttonText}>Erneut versuchen</Text>

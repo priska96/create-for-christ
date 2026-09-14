@@ -1,28 +1,23 @@
-import { MESSAGES } from '@create-for-christ/contracts';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { authClient } from '../authClient';
+import { signOut } from '../api/auth';
 import { ROUTE } from '../constants';
-
+import { queryError } from '../query/client';
 export function useSignOut() {
-  const [busy, setBusy] = useState(false),
-    [error, setError] = useState('');
-  async function logout() {
-    if (busy) return;
-    setBusy(true);
-    setError('');
-    try {
-      const result = await authClient.signOut();
-      if (result.error) {
-        setError(MESSAGES.logoutFailed);
-        return;
-      }
+  const client = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: signOut,
+    onSuccess: async () => {
+      await client.cancelQueries();
+      client.clear();
       router.replace(ROUTE.home);
-    } catch {
-      setError(MESSAGES.connection);
-    } finally {
-      setBusy(false);
-    }
-  }
-  return { busy, error, logout };
+    },
+  });
+  return {
+    busy: mutation.isPending,
+    error: queryError(mutation.error),
+    logout: () => {
+      if (!mutation.isPending) mutation.mutate();
+    },
+  };
 }

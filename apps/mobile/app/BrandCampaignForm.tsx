@@ -1,17 +1,8 @@
-import {
-  MESSAGES,
-  ROLE,
-  type CampaignDetail,
-} from '@create-for-christ/contracts';
-import {
-  Redirect,
-  router,
-  useFocusEffect,
-  useLocalSearchParams,
-} from 'expo-router';
-import { useCallback, useState } from 'react';
+import { ROLE } from '@create-for-christ/contracts';
+import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator } from 'react-native';
-import { ApiError, getBrandCampaigns } from '../src/api';
+import { useBrandCampaigns } from '../src/hooks/useCampaignQueries';
+import { queryError } from '../src/query/client';
 import { authClient } from '../src/authClient';
 import { ROUTE } from '../src/constants';
 import { CampaignForm } from '../src/features/campaigns/CampaignForm';
@@ -22,46 +13,17 @@ export default function BrandCampaignForm() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { data: session, isPending } = authClient.useSession();
   const state = useMe(session?.user.id);
-  const [existing, setExisting] = useState<CampaignDetail | null>(null);
-  const [loading, setLoading] = useState(Boolean(id));
-  const [loadError, setLoadError] = useState('');
-
-  useFocusEffect(
-    useCallback(() => {
-      if (!id || !session?.user.id) {
-        setLoading(false);
-        return;
-      }
-      let active = true;
-      const controller = new AbortController();
-      setLoading(true);
-      setLoadError('');
-      getBrandCampaigns(controller.signal)
-        .then((list) => {
-          if (!active) return;
-          const found = list.find((item) => item.id === id);
-          if (!found) {
-            setLoadError('Kampagne nicht gefunden.');
-            return;
-          }
-          setExisting(found);
-        })
-        .catch((cause) => {
-          if (active)
-            setLoadError(
-              cause instanceof ApiError ? cause.message : MESSAGES.connection
-            );
-        })
-        .finally(() => {
-          if (active) setLoading(false);
-        });
-      return () => {
-        active = false;
-        controller.abort();
-      };
-    }, [id, session?.user.id])
+  const query = useBrandCampaigns(
+    Boolean(id) && state.me?.profile?.details.role === ROLE.brand
   );
-
+  const existing = id
+    ? (query.data?.find((item) => item.id === id) ?? null)
+    : null;
+  const loading = Boolean(id) && query.isPending;
+  const loadError = id
+    ? queryError(query.error) ||
+      (!loading && !existing ? 'Kampagne nicht gefunden.' : '')
+    : '';
   if (isPending)
     return (
       <Page title="Kampagne">

@@ -1,25 +1,18 @@
+import { useSaveCampaign } from '../../hooks/useCampaignQueries';
+import { useCampaignImage } from '../../hooks/useCampaignImage';
+import { queryError } from '../../query/client';
 import {
   CAMPAIGN_STATUS,
   campaignInputSchema,
   DEAL,
-  HTTP,
-  IMAGE,
   LIMITS,
-  MESSAGES,
   type CampaignDetail,
   type CampaignInput,
 } from '@create-for-christ/contracts';
-import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { Image, Text, View } from 'react-native';
-import {
-  ApiError,
-  createCampaign,
-  updateCampaign,
-  uploadCampaignImage,
-} from '../../api';
 import { apiUrl } from '../../authClient';
 import { DEAL_LABEL, MONEY, ROUTE } from '../../constants';
 import {
@@ -132,7 +125,7 @@ export function CampaignForm({ initial }: { initial: CampaignDetail | null }) {
     setValue,
     clearErrors,
     setError: setFieldError,
-    formState: { isSubmitting: busy },
+    formState: { isSubmitting },
   } = useForm({
     defaultValues,
     ...FORM_OPTIONS,
@@ -152,9 +145,11 @@ export function CampaignForm({ initial }: { initial: CampaignDetail | null }) {
   );
   const [campaignId, setCampaignId] = useState(initial?.id ?? null);
 
-  const [error, setError] = useState('');
-  const [imageBusy, setImageBusy] = useState(false),
-    [imageError, setImageError] = useState('');
+  const mutation = useSaveCampaign();
+  const imageMutation = useCampaignImage();
+  const error = queryError(mutation.error);
+  const imageError = queryError(imageMutation.error);
+  const imageBusy = imageMutation.isPending;
 
   function toNumber(value: string): number | null {
     const trimmed = value.trim();
@@ -168,17 +163,17 @@ export function CampaignForm({ initial }: { initial: CampaignDetail | null }) {
       : NaN;
   }
 
+  const busy = isSubmitting || mutation.isPending;
   const disabled =
     busy || imageBusy || initial?.status === CAMPAIGN_STATUS.closed;
 
   async function submit(values: FormValues) {
     if (imageBusy || initial?.status === CAMPAIGN_STATUS.closed) return;
-    setError('');
-    const result = campaignInputSchema.parse(toInput(values));
     try {
-      const saved = campaignId
-        ? await updateCampaign(campaignId, result)
-        : await createCampaign(result);
+      const saved = await mutation.mutateAsync({
+        id: campaignId,
+        input: campaignInputSchema.parse(toInput(values)),
+      });
       setCampaignId(saved.id);
       if (!initial)
         router.replace({
@@ -189,59 +184,15 @@ export function CampaignForm({ initial }: { initial: CampaignDetail | null }) {
       applyApiErrors(cause, setFieldError, values, (path) =>
         fieldName(path, values)
       );
-      setError(cause instanceof ApiError ? cause.message : MESSAGES.connection);
     }
   }
-
-  async function pickImage() {
-    if (
-      !campaignId ||
-      busy ||
-      imageBusy ||
-      initial?.status === CAMPAIGN_STATUS.closed
-    )
-      return;
-    setImageBusy(true);
-    setImageError('');
-    try {
-      const picked = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        quality: IMAGE.pickerQuality,
-        allowsEditing: true,
-        base64: true,
-      });
-      if (picked.canceled || !picked.assets[0]) return;
-      const asset = picked.assets[0];
-      const mimeType = asset.mimeType ?? 'image/jpeg';
-      if (!asset.base64)
-        throw new ApiError(
-          HTTP.badRequest,
-          'Das Bild konnte nicht gelesen werden.'
-        );
-      if (asset.base64.length > IMAGE.maxBase64Length)
-        throw new ApiError(
-          HTTP.payloadTooLarge,
-          'Das Bild darf höchstens 5 MB groß sein.'
-        );
-      if (!(IMAGE.mimeTypes as readonly string[]).includes(mimeType))
-        throw new ApiError(
-          HTTP.badRequest,
-          'Bitte ein JPEG-, PNG- oder WebP-Bild auswählen.'
-        );
-      const updated = await uploadCampaignImage(campaignId, {
-        mimeType,
-        base64: asset.base64,
-      });
-      setProductImageUrl(updated.productImageUrl);
-    } catch (cause) {
-      setImageError(
-        cause instanceof ApiError
-          ? cause.message
-          : 'Das Bild konnte nicht hochgeladen werden.'
-      );
-    } finally {
-      setImageBusy(false);
-    }
+  function pickImage() {
+    if (!campaignId || disabled) return;
+    imageMutation.mutate(campaignId, {
+      onSuccess: (updated) => {
+        if (updated) setProductImageUrl(updated.productImageUrl);
+      },
+    });
   }
 
   return (

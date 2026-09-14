@@ -1,3 +1,5 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useResetPassword } from './hooks/useResetPassword.js';
 import { AUTH, resetPasswordFormSchema } from '@create-for-christ/contracts';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
@@ -23,22 +25,17 @@ function ResetPassword() {
     defaultValues: { password: '', confirm: '' },
   });
   const [saved, setSaved] = useState(false);
-  const [error, setError] = useState('');
+  const mutation = useResetPassword(token);
+  const error = mutation.error
+    ? 'Das Passwort konnte nicht geändert werden. Prüfe die Verbindung oder fordere einen neuen Link an.'
+    : '';
   async function submit({ password }: { password: string; confirm: string }) {
-    setError('');
     try {
-      const response = await fetch('/api/auth/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, newPassword: password }),
-      });
-      if (!response.ok) throw new Error('reset failed');
+      await mutation.mutateAsync(password);
       reset();
       setSaved(true);
     } catch {
-      setError(
-        'Das Passwort konnte nicht geändert werden. Prüfe die Verbindung oder fordere einen neuen Link an.'
-      );
+      /* The mutation error is shown below the fields. */
     }
   }
   if (invalidLink)
@@ -91,4 +88,9 @@ function ResetPassword() {
   );
 }
 const container = document.getElementById('reset');
-if (container) createRoot(container).render(<ResetPassword />);
+if (container)
+  createRoot(container).render(
+    <QueryClientProvider client={new QueryClient()}>
+      <ResetPassword />
+    </QueryClientProvider>
+  );

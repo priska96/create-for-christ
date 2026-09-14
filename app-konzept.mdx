@@ -12,6 +12,10 @@ Die Projektgrundlage verwendet npm Workspaces, Fastify, gemeinsame Zod-API-Vertr
 
 Dieses Dokument hält den bisherigen Brainstorming-Stand fest. Bestätigte Anforderungen sind von Vorschlägen und offenen Entscheidungen getrennt. Der App-Name wurde inzwischen als Create For Christ festgelegt.
 
+## Datenabfragen und Änderungen
+
+TanStack Query verwaltet Serverdaten, Lade- und Fehlerzustände sowie Mutationen über fachliche Hooks. Feed und Bewerbungslisten nutzen Cursor-Paginierung mit Infinite Queries. Der Cache ist pro Sitzung getrennt und wird beim Logout verworfen. Profil-, Kampagnen- und Bewerbungsänderungen aktualisieren die betroffenen Ansichten. Better Auth verwaltet weiterhin die Sitzung; React Hook Form verwaltet Eingabewerte und Feldvalidierung.
+
 ## Formulare und Validierung
 
 Alle Formulare nutzen React Hook Form. Fehlerhafte Eingabefelder erhalten einen roten Rahmen und eine deutsche Fehlermeldung direkt am Feld. Das gilt für Authentifizierung einschließlich Passwort-Reset, Creator-/Brand-Profile, Kampagnen und Bewerbungs-Pitch. Gemeinsame Zod-Schemas und unveränderte serverseitige Validierung sichern die Daten unabhängig von der UI ab.

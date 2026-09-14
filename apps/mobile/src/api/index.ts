@@ -14,7 +14,7 @@ import {
   type DealType,
   type ProfileInput,
 } from '@create-for-christ/contracts';
-import { FILTER_ALL } from '../constants';
+import { FILTER_ALL, TIMEOUT } from '../constants';
 
 import { apiUrl } from '../authClient';
 import { authenticatedRequest } from './request';
@@ -25,12 +25,22 @@ export async function getCampaigns(
   signal: AbortSignal
 ): Promise<Campaign[]> {
   const query = deal === FILTER_ALL ? '' : `?dealType=${deal}`;
-  const response = await fetch(`${apiUrl}${API_PATH.campaigns}${query}`, {
-    signal,
-  });
-  if (!response.ok)
-    throw new Error('Die Kampagnen konnten gerade nicht geladen werden.');
-  return campaignListSchema.parse(await response.json()).campaigns;
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  signal.addEventListener('abort', abort, { once: true });
+  if (signal.aborted) abort();
+  const timer = setTimeout(abort, TIMEOUT.discoveryMs);
+  try {
+    const response = await fetch(`${apiUrl}${API_PATH.campaigns}${query}`, {
+      signal: controller.signal,
+    });
+    if (!response.ok)
+      throw new Error('Die Kampagnen konnten gerade nicht geladen werden.');
+    return campaignListSchema.parse(await response.json()).campaigns;
+  } finally {
+    clearTimeout(timer);
+    signal.removeEventListener('abort', abort);
+  }
 }
 
 export async function getMe(signal?: AbortSignal) {

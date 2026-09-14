@@ -1,19 +1,18 @@
 import {
   DEAL,
   LIMITS,
-  MESSAGES,
   profileInputSchema,
   ROLE,
   type OwnProfile,
   type ProfileInput,
 } from '@create-for-christ/contracts';
 import { router } from 'expo-router';
-import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { Text, View } from 'react-native';
 import { colors, spacing, radii } from '../../ui/theme';
 import { RoleOption } from '../../ui/RoleOption';
-import { saveProfile } from '../../api';
+import { useSaveProfile } from '../../hooks/useSaveProfile';
+import { queryError } from '../../query/client';
 import { DEAL_LABEL, ROUTE } from '../../constants';
 import {
   FORM_OPTIONS,
@@ -122,7 +121,8 @@ export function ProfileForm({
   const displayName = useWatch({ control, name: 'displayName' });
   const brandName = useWatch({ control, name: 'brandName' });
   const deals = useWatch({ control, name: 'deals' });
-  const [error, setError] = useState('');
+  const mutation = useSaveProfile();
+  const error = queryError(mutation.error);
   function toggleDeal(deal: 'barter' | 'paid') {
     setValue(
       'deals',
@@ -133,19 +133,12 @@ export function ProfileForm({
     );
   }
   async function submit(values: FormValues) {
-    setError('');
-
     const result = profileInputSchema.parse(toInput(values));
     try {
-      await saveProfile(result);
+      await mutation.mutateAsync(result);
       router.replace(ROUTE.home);
     } catch (cause) {
       applyApiErrors(cause, setFieldError, values, fieldName);
-      setError(
-        cause instanceof Error && cause.name !== 'AbortError'
-          ? cause.message
-          : MESSAGES.connection
-      );
     }
   }
   return (

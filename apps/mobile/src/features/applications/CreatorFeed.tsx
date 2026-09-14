@@ -1,14 +1,18 @@
-import { DEAL, ROLE, type DealType } from '@create-for-christ/contracts';
-import { useCallback, useState } from 'react';
+import {
+  DEAL,
+  ROLE,
+  type FeedCampaign,
+  type DealType,
+} from '@create-for-christ/contracts';
+import { useState } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import {
-  applyToCampaign,
-  dismissCampaign,
-  getCreatorFeed,
-} from '../../api/applications';
+  useCreatorFeed,
+  useApplyToCampaign,
+  useDismissCampaign,
+} from '../../hooks/useApplicationQueries';
+import { queryError } from '../../query/client';
 import { DEAL_LABEL, FILTER_ALL } from '../../constants';
-import { useMutation } from '../../hooks/useMutation';
-import { usePagedItems } from '../../hooks/usePagedItems';
 import {
   Action,
   Choice,
@@ -28,43 +32,39 @@ export function CreatorFeed() {
   const [filter, setFilter] = useState<DealType | typeof FILTER_ALL>(
     FILTER_ALL
   );
-  const [confirming, setConfirming] = useState(false);
+  const [confirming, setConfirming] = useState<FeedCampaign | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [notice, setNotice] = useState('');
-  const mutation = useMutation();
-  const fetchPage = useCallback(
-    async (cursor: string | undefined, signal: AbortSignal) => {
-      const page = await getCreatorFeed(
-        { cursor, ...(filter === FILTER_ALL ? {} : { dealType: filter }) },
-        signal
-      );
-      return { items: page.campaigns, nextCursor: page.nextCursor };
-    },
-    [filter]
-  );
-  const page = usePagedItems(fetchPage);
+  const apply = useApplyToCampaign();
+  const dismissMutation = useDismissCampaign();
+  const busy = apply.isPending || dismissMutation.isPending;
+  const error = queryError(apply.error || dismissMutation.error);
+  function clearError() {
+    apply.reset();
+    dismissMutation.reset();
+  }
+  const page = useCreatorFeed(filter);
   const campaign = page.items[0];
   function complete(message: string) {
-    page.setItems((items) => items.filter((item) => item.id !== campaign?.id));
-    setConfirming(false);
+    setConfirming(null);
     setNotice(message);
   }
   function interested() {
-    setConfirming(true);
+    setConfirming(campaign ?? null);
     setNotice('');
-    mutation.clearError();
+    clearError();
   }
   function dismiss() {
     if (campaign)
-      void mutation.run(
-        () => dismissCampaign(campaign.id),
-        () => complete('Kampagne übersprungen.')
-      );
+      dismissMutation.mutate(campaign.id, {
+        onSuccess: () => complete('Kampagne übersprungen.'),
+      });
   }
+
   function reload() {
-    setConfirming(false);
+    setConfirming(null);
     setNotice('');
-    mutation.clearError();
+    clearError();
     page.reload();
   }
   return (
@@ -76,7 +76,7 @@ export function CreatorFeed() {
           small
           icon="refresh-outline"
           label="Aktualisieren"
-          disabled={mutation.busy || page.loading}
+          disabled={busy || page.loading}
           onPress={reload}
         />
       }
@@ -91,24 +91,24 @@ export function CreatorFeed() {
                 : DEAL_LABEL[value as DealType]
             }
             checked={filter === value}
-            disabled={mutation.busy || confirming}
+            disabled={busy || Boolean(confirming)}
             onPress={() => {
               setFilter(value as typeof filter);
               setNotice('');
-              mutation.clearError();
+              clearError();
             }}
           />
         ))}
       </View>
 
       <Notice message={notice} />
-      <Notice error message={confirming ? '' : mutation.error || page.error} />
+      <Notice error message={confirming ? '' : error || page.error} />
       {page.loading && <ActivityIndicator />}
       {campaign && !page.loading && (
         <>
           <SwipeCard
             key={campaign.id}
-            disabled={mutation.busy || confirming}
+            disabled={busy || Boolean(confirming)}
             onInterested={interested}
             onDismiss={dismiss}
           >
@@ -119,21 +119,21 @@ export function CreatorFeed() {
               icon="close"
               label="Nicht interessiert"
               tone="negative"
-              busy={mutation.busy}
-              disabled={confirming}
+              busy={busy}
+              disabled={Boolean(confirming)}
               onPress={dismiss}
             />
             <IconButton
               icon="information"
               label="Kampagnendetails"
-              disabled={mutation.busy}
+              disabled={busy}
               onPress={() => setShowDetails(true)}
             />
             <IconButton
               icon="heart"
               label="Bewerben"
               tone="positive"
-              disabled={mutation.busy || confirming}
+              disabled={busy || Boolean(confirming)}
               onPress={interested}
             />
           </View>
@@ -156,33 +156,31 @@ export function CreatorFeed() {
               </Action>
             </DetailSheet>
           )}
-          {confirming && (
-            <ApplicationConfirmation
-              campaign={campaign}
-              visible={confirming}
-              busy={mutation.busy}
-              error={mutation.error}
-              onCancel={() => {
-                setConfirming(false);
-                mutation.clearError();
-              }}
-              onSubmit={(pitch) =>
-                mutation.run(
-                  () =>
-                    applyToCampaign(campaign.id, {
-                      pitch,
-                      campaignVersion: campaign.version,
-                    }),
-                  () =>
-                    complete(
-                      'Bewerbung gesendet. Die Brand kann dir jetzt zusagen.'
-                    )
-                )
-              }
-              onReload={reload}
-            />
-          )}
         </>
+      )}
+      {confirming && (
+        <ApplicationConfirmation
+          campaign={confirming}
+          visible={Boolean(confirming)}
+          busy={busy}
+          error={error}
+          onCancel={() => {
+            setConfirming(null);
+            clearError();
+          }}
+          onSubmit={async (pitch) => {
+            try {
+              await apply.mutateAsync({
+                id: confirming.id,
+                input: { pitch, campaignVersion: confirming.version },
+              });
+              complete('Bewerbung gesendet. Die Brand kann dir jetzt zusagen.');
+            } catch {
+              /* The mutation error is displayed in the confirmation. */
+            }
+          }}
+          onReload={reload}
+        />
       )}
       {!campaign && !page.loading && !page.error && (
         <Notice

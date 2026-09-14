@@ -1,16 +1,13 @@
+import { useSignUp } from '../src/hooks/useAuthMutations';
+import { AuthError } from '../src/api/auth';
+import { queryError } from '../src/query/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { FORM_OPTIONS, applyAuthErrors } from '../src/forms';
-import {
-  signUpFormSchema,
-  API_PATH,
-  AUTH,
-  LIMITS,
-  MESSAGES,
-} from '@create-for-christ/contracts';
+import { signUpFormSchema, AUTH, LIMITS } from '@create-for-christ/contracts';
 import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
-import { apiUrl, authClient, authError } from '../src/authClient';
+import { authClient } from '../src/authClient';
 import { ROUTE } from '../src/constants';
 import { Action, FormField, Notice, Page } from '../src/ui';
 
@@ -27,9 +24,10 @@ export default function SignUp() {
     resolver: zodResolver(signUpFormSchema),
     defaultValues: { name: '', email: '', password: '', confirm: '' },
   });
-  const busy = isSubmitting;
-  const [error, setError] = useState('');
+  const mutation = useSignUp();
+  const error = queryError(mutation.error);
   const [sent, setSent] = useState(false);
+  const busy = isSubmitting || mutation.isPending;
   if (session) return <Redirect href={ROUTE.home} />;
   async function submit({
     name,
@@ -41,27 +39,14 @@ export default function SignUp() {
     password: string;
     confirm: string;
   }) {
-    setError('');
     try {
-      const result = await authClient.signUp.email({
-        name: name.trim(),
-        email: email.trim(),
-        password,
-        callbackURL: `${apiUrl}${API_PATH.verified}`,
-      });
-      if (result.error) {
-        applyAuthErrors(result.error.code, setFieldError, [
-          'email',
-          'password',
-        ]);
-        setError(authError(result.error.code));
-        return;
-      }
+      await mutation.mutateAsync({ name, email, password });
       resetField('password');
       resetField('confirm');
       setSent(true);
-    } catch {
-      setError(MESSAGES.connection);
+    } catch (cause) {
+      if (cause instanceof AuthError)
+        applyAuthErrors(cause.code, setFieldError, ['email', 'password']);
     }
   }
   if (sent)

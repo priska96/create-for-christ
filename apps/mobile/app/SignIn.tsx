@@ -1,15 +1,17 @@
+import {
+  useSignIn,
+  useResendVerification,
+} from '../src/hooks/useAuthMutations';
+import { AuthError } from '../src/api/auth';
+import { queryError } from '../src/query/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { FORM_OPTIONS, applyAuthErrors } from '../src/forms';
-import {
-  signInFormSchema,
-  API_PATH,
-  MESSAGES,
-} from '@create-for-christ/contracts';
+import { signInFormSchema } from '@create-for-christ/contracts';
 import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
 import { Text } from 'react-native';
-import { apiUrl, authClient, authError } from '../src/authClient';
+import { authClient } from '../src/authClient';
 import { ROUTE } from '../src/constants';
 import { Action, FormField, Notice, Page, ui } from '../src/ui';
 
@@ -28,10 +30,11 @@ export default function SignIn() {
     resolver: zodResolver(signInFormSchema),
     defaultValues: { email: '', password: '' },
   });
-  const [error, setError] = useState('');
+  const mutation = useSignIn();
+  const resendMutation = useResendVerification();
+  const error = queryError(mutation.error || resendMutation.error);
   const [message, setMessage] = useState('');
-  const [resending, setResending] = useState(false);
-  const busy = isSubmitting || resending;
+  const busy = isSubmitting || mutation.isPending || resendMutation.isPending;
   if (session) return <Redirect href={ROUTE.home} />;
   async function login({
     email,
@@ -40,50 +43,29 @@ export default function SignIn() {
     email: string;
     password: string;
   }) {
-    setError('');
+    resendMutation.reset();
     setMessage('');
     try {
-      const result = await authClient.signIn.email({
-        email: email.trim(),
-        password,
-      });
-      if (result.error) {
-        applyAuthErrors(result.error.code, setFieldError, [
-          'email',
-          'password',
-        ]);
-        setError(authError(result.error.code));
-        return;
-      }
+      await mutation.mutateAsync({ email, password });
       resetField('password');
       router.replace(ROUTE.home);
-    } catch {
-      setError(MESSAGES.connection);
+    } catch (cause) {
+      if (cause instanceof AuthError)
+        applyAuthErrors(cause.code, setFieldError, ['email', 'password']);
     }
   }
   async function resend() {
     if (busy || !(await trigger('email'))) return;
-    const email = getValues('email');
-    setResending(true);
-    setError('');
+    mutation.reset();
     setMessage('');
     try {
-      const result = await authClient.sendVerificationEmail({
-        email: email.trim(),
-        callbackURL: `${apiUrl}${API_PATH.verified}`,
-      });
-      if (result.error) {
-        applyAuthErrors(result.error.code, setFieldError, ['email']);
-        setError(authError(result.error.code));
-        return;
-      }
+      await resendMutation.mutateAsync(getValues('email'));
       setMessage(
         'Falls eine Bestätigung erforderlich ist, erhältst du einen neuen Link per E-Mail.'
       );
-    } catch {
-      setError(MESSAGES.connection);
-    } finally {
-      setResending(false);
+    } catch (cause) {
+      if (cause instanceof AuthError)
+        applyAuthErrors(cause.code, setFieldError, ['email']);
     }
   }
   return (

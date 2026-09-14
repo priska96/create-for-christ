@@ -1,14 +1,12 @@
+import { usePasswordResetRequest } from '../src/hooks/useAuthMutations';
+import { AuthError } from '../src/api/auth';
+import { queryError } from '../src/query/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { FORM_OPTIONS, applyAuthErrors } from '../src/forms';
-import {
-  emailFormSchema,
-  API_PATH,
-  MESSAGES,
-} from '@create-for-christ/contracts';
+import { emailFormSchema } from '@create-for-christ/contracts';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { apiUrl, authClient, authError } from '../src/authClient';
 import { ROUTE } from '../src/constants';
 import { Action, FormField, Notice, Page } from '../src/ui';
 
@@ -23,24 +21,17 @@ export default function ForgotPassword() {
     resolver: zodResolver(emailFormSchema),
     defaultValues: { email: '' },
   });
-  const busy = isSubmitting;
-  const [error, setError] = useState('');
+  const mutation = usePasswordResetRequest();
+  const error = queryError(mutation.error);
   const [sent, setSent] = useState(false);
+  const busy = isSubmitting || mutation.isPending;
   async function submit({ email }: { email: string }) {
-    setError('');
     try {
-      const result = await authClient.requestPasswordReset({
-        email: email.trim(),
-        redirectTo: `${apiUrl}${API_PATH.resetPassword}`,
-      });
-      if (result.error) {
-        applyAuthErrors(result.error.code, setFieldError, ['email']);
-        setError(authError(result.error.code));
-        return;
-      }
+      await mutation.mutateAsync({ email });
       setSent(true);
-    } catch {
-      setError(MESSAGES.connection);
+    } catch (cause) {
+      if (cause instanceof AuthError)
+        applyAuthErrors(cause.code, setFieldError, ['email']);
     }
   }
   return (

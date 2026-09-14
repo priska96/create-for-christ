@@ -3,16 +3,14 @@ import {
   ROLE,
   type ApplicationRecord,
 } from '@create-for-christ/contracts';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { ActivityIndicator, Linking, Text, View } from 'react-native';
 import {
-  decideApplication,
-  getApplications,
-  getBrandInbox,
-} from '../../api/applications';
+  useApplications,
+  useApplicationDecision,
+} from '../../hooks/useApplicationQueries';
+import { queryError } from '../../query/client';
 import { FILTER_ALL } from '../../constants';
-import { useMutation } from '../../hooks/useMutation';
-import { usePagedItems } from '../../hooks/usePagedItems';
 import {
   Action,
   Avatar,
@@ -49,28 +47,11 @@ export function ApplicationList({
   const [decision, setDecision] = useState<Decision | null>(null);
   const [match, setMatch] = useState<ApplicationRecord | null>(null);
   const [notice, setNotice] = useState('');
-  const mutation = useMutation();
-  const fetchPage = useCallback(
-    async (cursor: string | undefined, signal: AbortSignal) => {
-      const query = {
-        cursor,
-        ...(filter === FILTER_ALL ? {} : { status: filter }),
-      };
-      const result = await (brandInbox
-        ? getBrandInbox(query, signal)
-        : getApplications(query, campaignId, signal));
-      return { items: result.applications, nextCursor: result.nextCursor };
-    },
-    [campaignId, brandInbox, filter]
-  );
-  const page = usePagedItems(fetchPage);
+  const mutation = useApplicationDecision();
+  const [linkError, setLinkError] = useState('');
+  const page = useApplications(filter, campaignId, brandInbox);
   const selected = page.items.find((item) => item.id === selectedId);
   function update(application: ApplicationRecord) {
-    page.setItems((items) =>
-      items
-        .map((item) => (item.id === application.id ? application : item))
-        .filter((item) => filter === FILTER_ALL || item.status === filter)
-    );
     setDecision(null);
     setSelectedId(null);
     setNotice(
@@ -83,22 +64,20 @@ export function ApplicationList({
     application: ApplicationRecord,
     action: Decision | null = null
   ) {
-    mutation.clearError();
+    mutation.reset();
     setSelectedId(application.id);
     setDecision(action);
   }
   function openLink(url: string) {
-    void mutation.run(
-      async () => {
-        await Linking.openURL(url);
-      },
-      () => {}
+    setLinkError('');
+    void Linking.openURL(url).catch(() =>
+      setLinkError('Der Link konnte nicht geöffnet werden.')
     );
   }
   function reload() {
     setSelectedId(null);
     setDecision(null);
-    mutation.clearError();
+    mutation.reset();
     page.reload();
   }
   return (
@@ -110,7 +89,7 @@ export function ApplicationList({
           small
           icon="refresh-outline"
           label="Aktualisieren"
-          disabled={mutation.busy || page.loading}
+          disabled={mutation.isPending || page.loading}
           onPress={reload}
         />
       }
@@ -130,7 +109,7 @@ export function ApplicationList({
                 : STATUS_LABEL[value as ApplicationRecord['status']]
             }
             checked={filter === value}
-            disabled={mutation.busy}
+            disabled={mutation.isPending}
             onPress={() => {
               setFilter(value as typeof filter);
               setSelectedId(null);
@@ -142,7 +121,11 @@ export function ApplicationList({
       <Notice message={notice} />
       <Notice
         error
-        message={selected ? page.error : mutation.error || page.error}
+        message={
+          selected
+            ? page.error
+            : queryError(mutation.error) || linkError || page.error
+        }
       />
       <View>
         {page.items.map((application) => (
@@ -150,7 +133,7 @@ export function ApplicationList({
             key={application.id}
             application={application}
             brandView={brandView}
-            busy={mutation.busy}
+            busy={mutation.isPending}
             onOpen={() => open(application)}
             onAccept={() => open(application, DECISION.accept)}
             onReject={() => open(application, DECISION.reject)}
@@ -168,7 +151,7 @@ export function ApplicationList({
       {page.nextCursor && (
         <Action
           busy={page.loading}
-          disabled={mutation.busy}
+          disabled={mutation.isPending}
           onPress={page.more}
         >
           Weitere Bewerbungen laden
@@ -182,7 +165,7 @@ export function ApplicationList({
               <MatchPanel application={match} onClose={() => setMatch(null)} />
             ) : undefined
           }
-          busy={mutation.busy}
+          busy={mutation.isPending}
           onClose={() => {
             setSelectedId(null);
             setDecision(null);
@@ -218,7 +201,7 @@ export function ApplicationList({
               <Text style={ui.body}>{selected.creator.topics.join(' · ')}</Text>
               <Action
                 secondary
-                disabled={mutation.busy}
+                disabled={mutation.isPending}
                 onPress={() =>
                   openLink(
                     `${INSTAGRAM_PROFILE_URL}${encodeURIComponent(selected.creator.instagramHandle)}/`
@@ -230,7 +213,7 @@ export function ApplicationList({
                 <Action
                   key={url}
                   secondary
-                  disabled={mutation.busy}
+                  disabled={mutation.isPending}
                   onPress={() => openLink(url)}
                 >{`Portfolio-Reel ${index + 1}`}</Action>
               ))}
@@ -244,7 +227,7 @@ export function ApplicationList({
           <Text style={ui.body}>
             Pitch: {selected.pitch || 'Kein Pitch angegeben.'}
           </Text>
-          <Notice error message={mutation.error} />
+          <Notice error message={queryError(mutation.error) || linkError} />
           {selected.collaborationId && (
             <>
               <Notice message="Ihr habt ein Match! Die Brand hat diese Bewerbung angenommen." />
@@ -263,11 +246,11 @@ export function ApplicationList({
                   }
                 />
                 <Action
-                  busy={mutation.busy}
+                  busy={mutation.isPending}
                   onPress={() =>
-                    void mutation.run(
-                      () => decideApplication(selected.id, decision),
-                      update
+                    mutation.mutate(
+                      { id: selected.id, decision },
+                      { onSuccess: update }
                     )
                   }
                 >
@@ -277,7 +260,7 @@ export function ApplicationList({
                 </Action>
                 <Action
                   secondary
-                  disabled={mutation.busy}
+                  disabled={mutation.isPending}
                   onPress={() => setDecision(null)}
                 >
                   Abbrechen
@@ -286,14 +269,14 @@ export function ApplicationList({
             ) : (
               <>
                 <Action
-                  disabled={mutation.busy}
+                  disabled={mutation.isPending}
                   onPress={() => setDecision(DECISION.accept)}
                 >
                   Annehmen
                 </Action>
                 <Action
                   secondary
-                  disabled={mutation.busy}
+                  disabled={mutation.isPending}
                   onPress={() => setDecision(DECISION.reject)}
                 >
                   Ablehnen

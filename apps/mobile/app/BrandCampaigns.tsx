@@ -1,12 +1,5 @@
-import type { CampaignDetail } from '@create-for-christ/contracts';
-import {
-  CAMPAIGN_STATUS,
-  DEAL,
-  MESSAGES,
-  ROLE,
-} from '@create-for-christ/contracts';
-import { Redirect, router, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { CAMPAIGN_STATUS, DEAL, ROLE } from '@create-for-christ/contracts';
+import { Redirect, router } from 'expo-router';
 import {
   ActivityIndicator,
   Pressable,
@@ -15,11 +8,10 @@ import {
   View,
 } from 'react-native';
 import {
-  ApiError,
-  closeCampaign,
-  getBrandCampaigns,
-  publishCampaign,
-} from '../src/api';
+  useBrandCampaigns,
+  useCampaignTransition,
+} from '../src/hooks/useCampaignQueries';
+import { queryError } from '../src/query/client';
 import { authClient } from '../src/authClient';
 import { CAMPAIGN_STATUS_LABEL, ROUTE } from '../src/constants';
 import { useMe } from '../src/hooks';
@@ -37,38 +29,14 @@ import { colors, fontSize, fontWeight, radii, spacing } from '../src/ui/theme';
 export default function BrandCampaigns() {
   const { data: session, isPending } = authClient.useSession();
   const state = useMe(session?.user.id);
-  const [campaigns, setCampaigns] = useState<CampaignDetail[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [busyId, setBusyId] = useState<string | null>(null);
-
-  useFocusEffect(
-    useCallback(() => {
-      if (!session?.user.id) return;
-      let active = true;
-      const controller = new AbortController();
-      setLoading(true);
-      setError('');
-      getBrandCampaigns(controller.signal)
-        .then((value) => {
-          if (active) setCampaigns(value);
-        })
-        .catch((cause) => {
-          if (active)
-            setError(
-              cause instanceof ApiError ? cause.message : MESSAGES.connection
-            );
-        })
-        .finally(() => {
-          if (active) setLoading(false);
-        });
-      return () => {
-        active = false;
-        controller.abort();
-      };
-    }, [session?.user.id])
+  const query = useBrandCampaigns(
+    state.me?.profile?.details.role === ROLE.brand
   );
-
+  const mutation = useCampaignTransition();
+  const campaigns = query.data ?? [];
+  const loading = query.isPending;
+  const error = queryError(mutation.error || query.error);
+  const busyId = mutation.isPending ? mutation.variables.id : null;
   if (isPending)
     return (
       <Page title="Deine Kampagnen">
@@ -94,21 +62,8 @@ export default function BrandCampaigns() {
   if (state.me.profile.details.role !== ROLE.brand)
     return <Redirect href={ROUTE.home} />;
 
-  async function transition(id: string, action: 'publish' | 'close') {
-    setBusyId(id);
-    setError('');
-    try {
-      const updated = await (action === 'publish'
-        ? publishCampaign(id)
-        : closeCampaign(id));
-      setCampaigns((list) =>
-        list.map((item) => (item.id === id ? updated : item))
-      );
-    } catch (cause) {
-      setError(cause instanceof ApiError ? cause.message : MESSAGES.connection);
-    } finally {
-      setBusyId(null);
-    }
+  function transition(id: string, action: 'publish' | 'close') {
+    mutation.mutate({ id, action });
   }
 
   return (
