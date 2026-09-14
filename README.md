@@ -193,3 +193,16 @@ Die Passwort-Reset-Seite wird von derselben API wie bisher ausgeliefert. `npm ru
 `AppQueryProvider` stellt je Sitzung einen eigenen QueryClient bereit. Beim Accountwechsel und Logout werden ausstehende Queries abgebrochen und der alte Cache geleert. Better Auth bleibt für die Sitzung zuständig. Expo-AppState und Netzwerkstatus steuern Aktualisierungen im Vordergrund und nach Wiederverbindung; Router-Fokus aktualisiert geöffnete Ansichten.
 
 Die Hooks in `apps/mobile/src/hooks` kapseln Profil-, Kampagnen-, Auth- und Bewerbungsabfragen sowie Mutationen. Feed und Bewerbungslisten verwenden `useInfiniteQuery` mit getrennten Schlüsseln je Filter. Erfolgreiche Änderungen aktualisieren den Cache und invalidieren betroffene Listen; fehlgeschlagene Mutationen werden weder automatisch wiederholt noch für spätere Ausführung offline gespeichert. Formularwerte bleiben in React Hook Form und werden durch Hintergrundabfragen nicht zurückgesetzt.
+
+## Dauerhafte Tests
+
+- `npm test`: schnelle API-, Schema- und Cache-Tests ohne laufende Datenbank.
+- `npm run test:integration`: echte PostgreSQL-Tests für Authentifizierung, Rollen/Eigentümerschaft, CSRF, Kampagnen, Uploads, Bewerbungen, Kapazitätsgrenzen und konkurrierende Zusagen.
+- `npm run test:e2e`: baut API und Expo-Web und prüft mit Playwright Registrierung, Feldfehler, Profil-Onboarding, Passwort-Reset, Swipe-/Match-Abläufe, Bildauswahl/-austausch, Veröffentlichung, Cursor-Paginierung, Filter-Caches und Kontowechsel.
+- `npm run test:all`: Code-Prüfungen, schnelle Tests, Integrationstests und Browser-Suite zusammen.
+
+Einmalig den Browser installieren: `npm exec -w @create-for-christ/e2e -- playwright install chromium`. Alternativ einen vorhandenen Chrome mit `CFC_TEST_BROWSER=chrome npm run test:e2e` verwenden. Einzelne Browsergruppen lassen sich z. B. mit `npm run test:e2e -- --project=upload` ausführen.
+
+Für Integration/E2E muss die lokale Datenbank laufen (`npm run db:up`). E2E liest die Verbindung aus `TEST_DATABASE_URL` oder `apps/api/.env`, erlaubt nur lokale Datenbanken und erzeugt je Test ein eigenes Schema mit frischen Konten. Test-E-Mails werden im Arbeitsspeicher abgefangen; Schema und erzeugte Bilder werden anschließend entfernt. Die Ports 3100/3101 müssen frei sein. Browsergruppen laufen in getrennten Prozessen, damit der Auth-Rate-Limiter Tests nicht gegenseitig beeinflusst.
+
+Der HTML-Bericht liegt in `apps/e2e/playwright-report`, Fehler-Traces und Screenshots in `apps/e2e/test-results` (beides von Git ausgeschlossen). Die Browser-Suite testet Expo-Web; native iOS-/Android-Bedienung und die nativen Bildauswahldialoge benötigen weiterhin Gerätetests.

@@ -12,6 +12,10 @@ Die Projektgrundlage verwendet npm Workspaces, Fastify, gemeinsame Zod-API-Vertr
 
 Dieses Dokument hält den bisherigen Brainstorming-Stand fest. Bestätigte Anforderungen sind von Vorschlägen und offenen Entscheidungen getrennt. Der App-Name wurde inzwischen als Create For Christ festgelegt.
 
+## Tests
+
+Dauerhafte Tests sichern Authentifizierung, rollenbasierte Berechtigungen, Formularvalidierung, Kampagnen und Bild-Uploads sowie Bewerbungen und konkurrierende Zusagen ab. Die Playwright-Suite prüft außerdem Navigation, Query-Cache, Pagination und Kontowechsel im Expo-Web-Frontend. `npm run test:all` führt die gesamte automatisierte Prüfung aus. Native Gerätetests ergänzen diese Browserprüfungen.
+
 ## Datenabfragen und Änderungen
 
 TanStack Query verwaltet Serverdaten, Lade- und Fehlerzustände sowie Mutationen über fachliche Hooks. Feed und Bewerbungslisten nutzen Cursor-Paginierung mit Infinite Queries. Der Cache ist pro Sitzung getrennt und wird beim Logout verworfen. Profil-, Kampagnen- und Bewerbungsänderungen aktualisieren die betroffenen Ansichten. Better Auth verwaltet weiterhin die Sitzung; React Hook Form verwaltet Eingabewerte und Feldvalidierung.

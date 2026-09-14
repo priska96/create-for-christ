@@ -12,3 +12,7 @@ apps/mobile/ios/
 apps/api/uploads/
 
 apps/api/.generated/
+
+apps/e2e/test-results/
+apps/e2e/playwright-report/
+apps/e2e/uploads/

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { mapPages, type ItemPages } from '../../mobile/src/query/cache.js';
+
 test('infinite cache updates preserve page cursors and never mutate snapshots', () => {
   const original: ItemPages<{ id: string }> = {
     pages: [
@@ -23,4 +24,30 @@ test('infinite cache updates preserve page cursors and never mutate snapshots', 
     mapPages(undefined, () => []),
     undefined
   );
+});
+
+test('decision updates remove entries from incompatible filters without changing other applications', () => {
+  const original: ItemPages<{ id: string; status: string }> = {
+    pages: [
+      {
+        items: [
+          { id: 'chosen', status: 'pending' },
+          { id: 'untouched', status: 'pending' },
+        ],
+        nextCursor: null,
+      },
+    ],
+    pageParams: [undefined],
+  };
+  const updated = mapPages(original, (items) =>
+    items
+      .map((item) =>
+        item.id === 'chosen' ? { ...item, status: 'accepted' } : item
+      )
+      .filter((item) => item.status === 'pending')
+  );
+  assert.deepEqual(updated?.pages[0]?.items, [
+    { id: 'untouched', status: 'pending' },
+  ]);
+  assert.equal(original.pages[0]?.items[0]?.status, 'pending');
 });
