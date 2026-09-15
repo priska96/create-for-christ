@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Modal } from 'react-native';
+import { AppModal } from './AppModal';
 import { IconButton } from './IconButton';
 import { Page } from './Page';
 export function DetailSheet({
@@ -16,7 +16,7 @@ export function DetailSheet({
   fullScreenContent?: ReactNode;
 }) {
   return (
-    <Modal
+    <AppModal
       visible
       animationType="slide"
       onRequestClose={() => {
@@ -28,7 +28,6 @@ export function DetailSheet({
           title={title}
           headerAction={
             <IconButton
-              small
               icon="close"
               label="Schließen"
               disabled={busy}
@@ -39,6 +38,6 @@ export function DetailSheet({
           {children}
         </Page>
       )}
-    </Modal>
+    </AppModal>
   );
 }

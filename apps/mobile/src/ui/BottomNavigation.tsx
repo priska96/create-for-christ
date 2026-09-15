@@ -1,6 +1,7 @@
 import { ROLE, type ProfileInput } from '@create-for-christ/contracts';
 import { router, usePathname } from 'expo-router';
 import { Pressable, Text, View, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ROUTE } from '../constants';
 import { Icon, type IconName } from './Icon';
 import { colors, fontSize, fontWeight, layout, spacing } from './theme';
@@ -32,40 +33,44 @@ export function BottomNavigation({ role }: { role: ProfileInput['role'] }) {
     { label: 'Profil', path: ROUTE.profile, icon: 'person-outline' },
   ];
   return (
-    <View
-      accessibilityRole="tablist"
-      accessibilityLabel="Hauptnavigation"
-      style={styles.bar}
-    >
-      {tabs.map((tab) => {
-        const selected =
-          pathname === tab.path || Boolean(tab.activePaths?.includes(pathname));
-        return (
-          <Pressable
-            key={tab.label}
-            accessibilityRole="tab"
-            accessibilityLabel={tab.label}
-            accessibilityState={{ selected }}
-            onPress={() => {
-              if (!selected) router.replace(tab.path);
-            }}
-            style={styles.tab}
-          >
-            <Icon
-              name={tab.icon}
-              color={selected ? colors.text : colors.muted}
-            />
-            <Text style={[styles.label, selected && styles.active]}>
-              {tab.label}
-            </Text>
-            {selected && <View style={styles.dot} />}
-          </Pressable>
-        );
-      })}
-    </View>
+    <SafeAreaView edges={['bottom']} style={styles.safe}>
+      <View
+        accessibilityRole="tablist"
+        accessibilityLabel="Hauptnavigation"
+        style={styles.bar}
+      >
+        {tabs.map((tab) => {
+          const selected =
+            pathname === tab.path ||
+            Boolean(tab.activePaths?.includes(pathname));
+          return (
+            <Pressable
+              key={tab.label}
+              accessibilityRole="tab"
+              accessibilityLabel={tab.label}
+              accessibilityState={{ selected }}
+              onPress={() => {
+                if (!selected) router.replace(tab.path);
+              }}
+              style={styles.tab}
+            >
+              <Icon
+                name={tab.icon}
+                color={selected ? colors.text : colors.muted}
+              />
+              <Text style={[styles.label, selected && styles.active]}>
+                {tab.label}
+              </Text>
+              {selected && <View style={styles.dot} />}
+            </Pressable>
+          );
+        })}
+      </View>
+    </SafeAreaView>
   );
 }
 const styles = StyleSheet.create({
+  safe: { backgroundColor: colors.surface },
   bar: {
     flexDirection: 'row',
     width: '100%',

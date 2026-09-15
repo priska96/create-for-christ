@@ -38,7 +38,14 @@ export function Page({
   scrollProps?: Pick<ScrollViewProps, 'onScroll' | 'onContentSizeChange'>;
 }) {
   return (
-    <SafeAreaView style={ui.safe}>
+    <SafeAreaView
+      style={ui.safe}
+      edges={
+        navigationRole
+          ? ['top', 'left', 'right']
+          : ['top', 'bottom', 'left', 'right']
+      }
+    >
       <View style={styles.header}>
         {onBack ? (
           <IconButton
@@ -68,6 +75,7 @@ export function Page({
           {...scrollProps}
           scrollEventThrottle={16}
           keyboardShouldPersistTaps="handled"
+          contentInsetAdjustmentBehavior="never"
           contentContainerStyle={ui.page}
         >
           {branded && (

@@ -43,7 +43,7 @@ export const spacing = {
   card: 18,
   section: 20,
   xl: 24,
-  pageBottom: 48,
+  pageBottom: 24,
 } as const;
 export const radii = {
   pill: 999,
@@ -93,7 +93,8 @@ export const layout = {
   controlHeight: 52,
   multilineHeight: 100,
   imageHeight: 250,
-  navigationHeight: 66,
+  navigationHeight: 56,
+  minimumTouchSize: 44,
   iconSize: 22,
   avatarSize: 48,
   largeAvatarSize: 100,

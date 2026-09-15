@@ -60,8 +60,8 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   small: {
-    width: layout.controlHeight - spacing.lg,
-    height: layout.controlHeight - spacing.lg,
+    width: layout.minimumTouchSize,
+    height: layout.minimumTouchSize,
   },
   positive: {
     backgroundColor: colors.successSoft,

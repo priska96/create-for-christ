@@ -6,7 +6,8 @@ import {
   applicationInputSchema,
   type FeedCampaign,
 } from '@create-for-christ/contracts';
-import { Modal, Text } from 'react-native';
+import { Text } from 'react-native';
+import { AppModal } from '../../ui/AppModal';
 import { Action, FormField, Notice, Page, ui } from '../../ui';
 import { CampaignBrief } from './CampaignBrief';
 export function ApplicationConfirmation({
@@ -37,7 +38,7 @@ export function ApplicationConfirmation({
   });
   const submitting = busy || isSubmitting;
   return (
-    <Modal
+    <AppModal
       visible={visible}
       animationType="slide"
       onRequestClose={() => {
@@ -74,6 +75,6 @@ export function ApplicationConfirmation({
           </Action>
         )}
       </Page>
-    </Modal>
+    </AppModal>
   );
 }
