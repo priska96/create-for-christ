@@ -3,7 +3,7 @@ import { defineConfig } from '@playwright/test';
 export default defineConfig({
   testDir: './tests',
   // Separate workers also isolate Better Auth's process-wide in-memory rate limiter.
-  projects: ['auth', 'marketplace', 'upload'].map((name) => ({
+  projects: ['auth', 'marketplace', 'upload', 'chat'].map((name) => ({
     name,
     testMatch: `**/${name}.spec.ts`,
   })),

@@ -27,6 +27,7 @@ export function BottomNavigation({ role }: { role: ProfileInput['role'] }) {
       label: 'Nachrichten',
       path: ROUTE.messages,
       icon: 'chatbubble-ellipses-outline',
+      activePaths: [ROUTE.conversation],
     },
     { label: 'Profil', path: ROUTE.profile, icon: 'person-outline' },
   ];

@@ -1,3 +1,4 @@
+import { registerChatRoutes } from './modules/chat/routes.js';
 import { registerApplicationRoutes } from './modules/applications/routes.js';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
@@ -58,6 +59,7 @@ export function buildApp(options: AppOptions) {
     const requireSession = createSessionGuard(authOptions);
     registerAuthRoutes(app, authOptions);
     registerProfileRoutes(app, options.profiles, requireSession);
+    if (options.chat) registerChatRoutes(app, options.chat, requireSession);
     if (options.applications)
       registerApplicationRoutes(app, options.applications, requireSession);
     if (options.campaigns)

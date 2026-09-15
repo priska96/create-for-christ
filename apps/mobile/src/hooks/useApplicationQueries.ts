@@ -49,6 +49,7 @@ function useApplicationInvalidation() {
   const client = useQueryClient();
   return () => {
     for (const queryKey of [
+      queryKeys.conversations,
       queryKeys.feed,
       queryKeys.applications,
       queryKeys.campaigns,

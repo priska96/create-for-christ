@@ -1,3 +1,4 @@
+import { createChatStore } from './modules/chat/store.js';
 import { createApplicationStore } from './modules/applications/store.js';
 import pg from 'pg';
 import { buildApp } from './app.js';
@@ -26,6 +27,7 @@ const app = buildApp({
   auth,
   profiles: createProfileStore(pool),
   campaigns: createCampaignStore(pool),
+  chat: createChatStore(pool),
   applications: createApplicationStore(pool),
   authBaseUrl: config.AUTH_BASE_URL,
   beforeClose: () => mailer.close(),

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 import type { ProfileInput } from '@create-for-christ/contracts';
 import {
   KeyboardAvoidingView,
@@ -7,6 +7,7 @@ import {
   Text,
   View,
   StyleSheet,
+  type ScrollViewProps,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BottomNavigation } from './BottomNavigation';
@@ -21,6 +22,9 @@ export function Page({
   onBack,
   headerAction,
   branded = false,
+  footer,
+  scrollRef,
+  scrollProps,
 }: {
   title: string;
   subtitle?: string;
@@ -29,6 +33,9 @@ export function Page({
   onBack?: () => void;
   headerAction?: ReactNode;
   branded?: boolean;
+  footer?: ReactNode;
+  scrollRef?: Ref<ScrollView>;
+  scrollProps?: Pick<ScrollViewProps, 'onScroll' | 'onContentSizeChange'>;
 }) {
   return (
     <SafeAreaView style={ui.safe}>
@@ -57,6 +64,9 @@ export function Page({
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
+          ref={scrollRef}
+          {...scrollProps}
+          scrollEventThrottle={16}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={ui.page}
         >
@@ -68,6 +78,7 @@ export function Page({
           {subtitle && <Text style={ui.body}>{subtitle}</Text>}
           {children}
         </ScrollView>
+        {footer}
       </KeyboardAvoidingView>
       {navigationRole && <BottomNavigation role={navigationRole} />}
     </SafeAreaView>

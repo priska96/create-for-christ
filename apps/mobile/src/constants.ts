@@ -7,6 +7,7 @@ export const ROUTE = {
   home: '/',
   brandInbox: '/BrandInbox',
   messages: '/Messages',
+  conversation: '/Conversation',
   creatorFeed: '/CreatorFeed',
   myApplications: '/MyApplications',
   brandApplications: '/BrandApplications',

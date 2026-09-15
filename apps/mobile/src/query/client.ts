@@ -5,6 +5,8 @@ import { ApiError } from '../api/request';
 export const QUERY = { staleMs: 30_000, gcMs: 300_000, retries: 1 } as const;
 export const queryKeys = {
   me: ['me'],
+  conversations: ['conversations'],
+  messages: ['messages'],
   campaigns: ['campaigns'],
   discovery: ['discovery'],
   feed: ['feed'],

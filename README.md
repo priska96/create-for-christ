@@ -93,7 +93,7 @@ Nach Änderungen an `packages/contracts` dessen Build neu starten; die gemeinsam
 - Eigene Bewerbungen mit Statusfiltern; Brands prüfen pro Kampagne Creator-Profil, Reel-Portfolio, Pitch und gespeicherte Bedingungen.
 - Zusage/Absage mit Bestätigung. Eine Zusage erstellt atomar genau eine Kooperation (`negotiating`) und belegt einen Platz; doppelte Anfragen sind idempotent.
 
-Chat, beidseitige Vereinbarungsbestätigung, Versandabwicklung und Reel-Abnahme sind weiterhin nicht implementiert. Automatische Instagram-Verifizierung folgt separat; der angegebene öffentliche Kanal wird noch nicht automatisch geprüft. Produktbilder liegen lokal auf dem API-Server unter `apps/api/uploads/campaigns` und sind über unguessbare Dateinamen öffentlich abrufbar; das ist keine produktionsreife Medienablage.
+Beidseitige Vereinbarungsbestätigung, Versandabwicklung und Reel-Abnahme sind weiterhin nicht implementiert. Automatische Instagram-Verifizierung folgt separat; der angegebene öffentliche Kanal wird noch nicht automatisch geprüft. Produktbilder liegen lokal auf dem API-Server unter `apps/api/uploads/campaigns` und sind über unguessbare Dateinamen öffentlich abrufbar; das ist keine produktionsreife Medienablage.
 
 ## Authentifizierung lokal testen
 
@@ -160,7 +160,7 @@ Neue Endpunkte: `GET /v1/creator/feed`, `POST /v1/creator/campaigns/:id/applicat
 
 Migration `004_applications.sql` ergänzt dauerhafte Dismissals, Kampagnenrevisionen und unveränderliche Bedingungen für Bewerbungen/Kooperationen. Ändert sich eine Kampagne vor dem Absenden, muss der Creator die Bedingungen neu laden. Zusagen sperren zuerst die Kampagne und dann die Bewerbung; auch Kampagnenänderungen verwenden dieselbe Kampagnensperre. Die Platzanzahl lässt sich nicht unter die Zahl angenommener Bewerbungen reduzieren. Nach Schließen oder Ablauf einer Kampagne sind Zusagen gesperrt; offene Bewerbungen können weiterhin abgelehnt werden.
 
-Die Personalisierung berücksichtigt derzeit Deal-Präferenzen, Verfügbarkeit und bisherige Aktionen. Themen-/Sprachfilter, Blockierung, Zurückziehen von Bewerbungen, Preisverhandlungen und Push-Nachrichten sind noch nicht implementiert. Ein Match startet noch keinen beidseitig bestätigten Auftrag; Chat und Vereinbarungsbestätigung sind der nächste Meilenstein.
+Die Personalisierung berücksichtigt derzeit Deal-Präferenzen, Verfügbarkeit und bisherige Aktionen. Themen-/Sprachfilter, Blockierung, Zurückziehen von Bewerbungen, Preisverhandlungen und Push-Nachrichten sind noch nicht implementiert. Ein Match startet noch keinen beidseitig bestätigten Auftrag; Die beidseitige Vereinbarungsbestätigung ist der nächste Meilenstein.
 
 
 ### Prüfstand des Bewerbungsmeilensteins
@@ -178,7 +178,7 @@ Die Vorlage `designs/ChatGPT Image 10. Sept. 2026, 11_14_49.png` bestimmt den vi
 
 Wiederverwendbare Bausteine liegen in `src/ui`: BottomNavigation, Icon, IconButton, Avatar, CampaignCover, DetailSheet, EmptyState und RoleOption. Profile, Formulare und Bestätigungen verwenden die bestehenden gemeinsamen Expo-UI-Buttons und zugänglichen Eingabefelder. Produktbilder kommen aus den Kampagnen; fehlende Bilder und derzeit nicht gespeicherte Profilfotos werden durch neutrale Flächen bzw. Initialen ersetzt. Erfundenes Bildmaterial, Bewertungen, Followerzahlen und Online-Status werden nicht angezeigt.
 
-Bewerbungen erscheinen als kompakte Zeilen. Ein Antippen öffnet die Detailansicht mit Creator-Profil, Reel-Links, Pitch und vollständigen Bedingungen. Zusage/Absage bleibt bestätigt und serverseitig geschützt. Die dunkle Match-Ansicht ist nur für tatsächlich angenommene Bewerbungen zugänglich. Der Nachrichten-Tab hat einen ausdrücklich als noch nicht verfügbar gekennzeichneten Leerzustand; echter Chat-Versand ist weiterhin der nächste funktionale Meilenstein.
+Bewerbungen erscheinen als kompakte Zeilen. Ein Antippen öffnet die Detailansicht mit Creator-Profil, Reel-Links, Pitch und vollständigen Bedingungen. Zusage/Absage bleibt bestätigt und serverseitig geschützt. Die dunkle Match-Ansicht ist nur für tatsächlich angenommene Bewerbungen zugänglich. Der Nachrichten-Tab zeigt Gespräche nach einem Match mit letzter Nachricht und ungelesenen Nachrichten. Der Textchat ist für beide Beteiligten verfügbar.
 
 Der neue Endpunkt `GET /v1/brand/applications` liefert ausschließlich Bewerbungen eigener Brand-Kampagnen und unterstützt die vorhandenen Statusfilter und Cursor. Die Integrationstests prüfen Brand-Isolation und Creator-Ausschluss. Es ist keine neue Datenbankmigration nötig. Die Browserprüfung auf 390 × 844 Pixeln deckt alle vier Tabs für beide Rollen, die feste Navigation beim Scrollen, Swipes, Details, Zusagen/Absagen, Match-Ansicht und Kampagnenformulare ab. Ein interaktiver nativer Gerätetest steht weiterhin aus.
 
@@ -206,3 +206,9 @@ Einmalig den Browser installieren: `npm exec -w @create-for-christ/e2e -- playwr
 Für Integration/E2E muss die lokale Datenbank laufen (`npm run db:up`). E2E liest die Verbindung aus `TEST_DATABASE_URL` oder `apps/api/.env`, erlaubt nur lokale Datenbanken und erzeugt je Test ein eigenes Schema mit frischen Konten. Test-E-Mails werden im Arbeitsspeicher abgefangen; Schema und erzeugte Bilder werden anschließend entfernt. Die Ports 3100/3101 müssen frei sein. Browsergruppen laufen in getrennten Prozessen, damit der Auth-Rate-Limiter Tests nicht gegenseitig beeinflusst.
 
 Der HTML-Bericht liegt in `apps/e2e/playwright-report`, Fehler-Traces und Screenshots in `apps/e2e/test-results` (beides von Git ausgeschlossen). Die Browser-Suite testet Expo-Web; native iOS-/Android-Bedienung und die nativen Bildauswahldialoge benötigen weiterhin Gerätetests.
+
+## Implementiert: Textchat nach einem Match
+
+Jede Kooperation dient als genau ein Gespräch, auch für bestehende Matches. Creator und die zugehörige Brand können Textnachrichten senden, ältere Nachrichten nachladen und die beim Match gespeicherten Kampagnenbedingungen öffnen. Nur Beteiligte mit verifizierter Sitzung erhalten Zugriff. Nachrichten sind auf 4.000 Zeichen begrenzt; der Versand ist rate-limitiert. Eine eindeutige Sende-ID verhindert Duplikate bei wiederholten Versuchen. Lesemarkierungen können nur vorwärts bewegt werden.
+
+React Hook Form validiert die Eingabe mit rotem Rahmen und Fehlermeldung. TanStack Query aktualisiert aktive Gespräche alle fünf Sekunden und die aktive Gesprächsliste alle zehn Sekunden; im Hintergrund pausiert das Polling. Anhänge, Push-Nachrichten und beidseitige Auftragsbestätigung folgen separat. Migration `005_chat.sql` ergänzt Nachrichten-Reihenfolge, Sende-IDs und Lesestatus. API- und Browser-Tests decken Berechtigungen, Wiederholungen, Pagination, Versand und Lesestatus ab.

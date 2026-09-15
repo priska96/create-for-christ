@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import {
   APPLICATION_STATUS,
   ROLE,
@@ -10,7 +11,7 @@ import {
   useApplicationDecision,
 } from '../../hooks/useApplicationQueries';
 import { queryError } from '../../query/client';
-import { FILTER_ALL } from '../../constants';
+import { FILTER_ALL, ROUTE } from '../../constants';
 import {
   Action,
   Avatar,
@@ -232,6 +233,15 @@ export function ApplicationList({
             <>
               <Notice message="Ihr habt ein Match! Die Brand hat diese Bewerbung angenommen." />
               <Action onPress={() => setMatch(selected)}>Match ansehen</Action>
+              <Action
+                onPress={() => {
+                  const id = selected.collaborationId!;
+                  setSelectedId(null);
+                  router.push({ pathname: ROUTE.conversation, params: { id } });
+                }}
+              >
+                Zum Gespräch
+              </Action>
             </>
           )}
           {brandView &&

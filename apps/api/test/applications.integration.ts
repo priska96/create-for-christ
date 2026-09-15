@@ -1,3 +1,5 @@
+import { CHAT } from '@create-for-christ/contracts';
+import { createChatStore } from '../src/modules/chat/store.js';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { readFile, readdir } from 'node:fs/promises';
@@ -92,6 +94,7 @@ test('real PostgreSQL: applications, snapshots, authorization and concurrent cap
     profiles,
     campaigns,
     applications,
+    chat: createChatStore(pool),
     origins: [origin],
     authBaseUrl: config.AUTH_BASE_URL,
   });
@@ -733,6 +736,153 @@ test('real PostgreSQL: applications, snapshots, authorization and concurrent cap
       );
       assert.equal(loaded.filter((id) => ids.includes(id)).length, ids.length);
       assert.equal(new Set(loaded).size, loaded.length);
+    }
+  );
+  await t.test(
+    'chat is match-only, private, idempotent and paginated with monotonic unread markers',
+    async () => {
+      const chat = createChatStore(pool);
+      const campaignId = await published();
+      const application = await applications.apply(first.id, campaignId, {
+        pitch: 'Chat test',
+        campaignVersion: await version(campaignId),
+      });
+      assert.equal(
+        (
+          await request(
+            'GET',
+            `/v1/conversations/${application.id}`,
+            first.cookie
+          )
+        ).statusCode,
+        404
+      );
+      const accepted = await applications.decide(
+        brand.id,
+        application.id,
+        'accepted'
+      );
+      const id = accepted.collaborationId!;
+      const url = `/v1/conversations/${id}`;
+      assert.equal((await request('GET', url)).statusCode, 401);
+      for (const actor of [otherBrand, second]) {
+        for (const suffix of ['', '/messages'])
+          assert.equal(
+            (await request('GET', url + suffix, actor.cookie)).statusCode,
+            404
+          );
+        assert.equal(
+          (
+            await request('POST', url + '/messages', actor.cookie, {
+              body: 'Injected',
+              clientId: randomUUID(),
+            })
+          ).statusCode,
+          404
+        );
+        assert.equal(
+          (await request('POST', url + '/read', actor.cookie, { through: '1' }))
+            .statusCode,
+          404
+        );
+        assert.ok(
+          !(await chat.list(actor.id)).conversations.some(
+            (item) => item.id === id
+          )
+        );
+      }
+      assert.equal(
+        (
+          await request(
+            'POST',
+            url + '/messages',
+            first.cookie,
+            { body: 'Hello', clientId: randomUUID() },
+            'https://evil.example'
+          )
+        ).statusCode,
+        403
+      );
+      for (const input of [
+        { body: ' ', clientId: randomUUID() },
+        { body: 'x'.repeat(CHAT.bodyLength + 1), clientId: randomUUID() },
+        { body: 'Hello', clientId: randomUUID(), senderId: brand.profileId },
+      ])
+        assert.equal(
+          (await request('POST', url + '/messages', first.cookie, input))
+            .statusCode,
+          400
+        );
+      assert.equal(
+        (await request('GET', url + '/messages?before=invalid', first.cookie))
+          .statusCode,
+        400
+      );
+      const input = { body: 'Hallo Brand', clientId: randomUUID() };
+      const sent = await Promise.all([
+        chat.send(first.id, id, input),
+        chat.send(first.id, id, input),
+      ]);
+      assert.equal(sent[0].id, sent[1].id);
+      assert.equal(
+        (
+          await request('POST', url + '/messages', first.cookie, {
+            ...input,
+            body: 'Changed',
+          })
+        ).statusCode,
+        409
+      );
+      assert.equal((await chat.detail(brand.id, id)).unreadCount, 1);
+      assert.equal((await chat.detail(first.id, id)).unreadCount, 0);
+      await chat.read(brand.id, id, sent[0].sequence);
+      assert.equal((await chat.detail(brand.id, id)).unreadCount, 0);
+      const another = await chat.send(first.id, id, {
+        body: 'Zweite Nachricht',
+        clientId: randomUUID(),
+      });
+      await chat.read(brand.id, id, another.sequence);
+      await chat.read(brand.id, id, sent[0].sequence);
+      assert.equal((await chat.detail(brand.id, id)).unreadCount, 0);
+      assert.equal(
+        (
+          await request('POST', url + '/read', first.cookie, {
+            through: '9223372036854775807',
+          })
+        ).statusCode,
+        404
+      );
+      for (let i = 0; i < CHAT.pageSize; i++)
+        await chat.send(brand.id, id, {
+          body: `Nachricht ${i}`,
+          clientId: randomUUID(),
+        });
+      const page = await chat.messages(first.id, id);
+      assert.equal(page.messages.length, CHAT.pageSize);
+      assert.ok(page.nextCursor);
+      const older = await chat.messages(first.id, id, page.nextCursor!);
+      assert.equal(older.messages.length, 2);
+      assert.equal(
+        new Set(
+          [...page.messages, ...older.messages].map((message) => message.id)
+        ).size,
+        CHAT.pageSize + 2
+      );
+      const terms = (await chat.detail(first.id, id)).terms;
+      await campaigns.update(brand.id, campaignId, {
+        ...campaignInput,
+        title: 'Nachträglich geändert',
+      });
+      assert.deepEqual((await chat.detail(first.id, id)).terms, terms);
+      const response = await request('GET', url, first.cookie);
+      assert.equal(response.statusCode, 200, response.body);
+      assert.equal(response.headers['cache-control'], 'no-store');
+      assert.equal(
+        (await chat.list(first.id)).conversations.filter(
+          (item) => item.id === id
+        ).length,
+        1
+      );
     }
   );
 });

@@ -222,7 +222,12 @@ test('creator and brand journeys, cache invalidation, pagination and account iso
   await brandPage
     .getByRole('tab', { name: 'Nachrichten', exact: true })
     .click();
-  await brandPage.getByText('Raum für Verbindung.', { exact: true }).waitFor();
+  await brandPage
+    .getByRole('button', {
+      name: 'Gespräch öffnen: Anna Creator · Kaffee am Morgen',
+      exact: true,
+    })
+    .waitFor();
   await brandPage.getByRole('tab', { name: 'Home', exact: true }).click();
   await brandPage
     .getByRole('button', { name: 'Neue Kampagne', exact: true })

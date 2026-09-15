@@ -1,3 +1,4 @@
+import { createChatStore } from '../api/src/modules/chat/store.js';
 import { test as base, expect } from '@playwright/test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
@@ -82,6 +83,7 @@ async function withEnvironment(
       origins: ['http://localhost:3100'],
       auth,
       campaigns,
+      chat: createChatStore(pool),
       applications: createApplicationStore(pool),
       profiles,
       authBaseUrl: config.AUTH_BASE_URL,
@@ -196,9 +198,10 @@ async function withEnvironment(
     await use({ app, pool, mail, brand, creator, campaigns, input, password });
   } finally {
     if (server)
-      await new Promise<void>((resolve, reject) =>
-        server!.close((error) => (error ? reject(error) : resolve()))
-      );
+      await new Promise<void>((resolve, reject) => {
+        server!.close((error) => (error ? reject(error) : resolve()));
+        server!.closeAllConnections();
+      });
     const images = await pool
       .query<{ product_image_url: string }>(
         'SELECT product_image_url FROM campaigns WHERE product_image_url IS NOT NULL'
