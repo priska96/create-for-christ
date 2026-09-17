@@ -26,6 +26,7 @@ import { CampaignBrief } from './CampaignBrief';
 import { ApplicationConfirmation } from './ApplicationConfirmation';
 import { CampaignSwipeCard } from './CampaignSwipeCard';
 import { SwipeCard } from './SwipeCard';
+import { useDetailSwipes } from '../../hooks/useDetailSwipes';
 import { styles } from './styles';
 
 export function CreatorFeed() {
@@ -61,6 +62,18 @@ export function CreatorFeed() {
       });
   }
 
+  const detailSwipes = useDetailSwipes({
+    disabled: busy || Boolean(confirming),
+    onInterested: () => {
+      setShowDetails(false);
+      interested();
+    },
+    onDismiss: () => {
+      setShowDetails(false);
+      dismiss();
+    },
+    onClose: () => setShowDetails(false),
+  });
   function reload() {
     setConfirming(null);
     setNotice('');
@@ -108,9 +121,15 @@ export function CreatorFeed() {
         <>
           <SwipeCard
             key={campaign.id}
+            underlay={
+              page.items[1] ? (
+                <CampaignSwipeCard campaign={page.items[1]} />
+              ) : undefined
+            }
             disabled={busy || Boolean(confirming)}
             onInterested={interested}
             onDismiss={dismiss}
+            onDetails={() => setShowDetails(true)}
           >
             <CampaignSwipeCard campaign={campaign} />
           </SwipeCard>
@@ -143,8 +162,14 @@ export function CreatorFeed() {
           {showDetails && (
             <DetailSheet
               title="Deine Kooperation"
+              transparent
+              busy={busy}
+              {...detailSwipes}
               onClose={() => setShowDetails(false)}
             >
+              <Text style={ui.body}>
+                ← Nicht interessiert · Bewerben → · ↓ Zurück (am Seitenanfang)
+              </Text>
               <CampaignBrief campaign={campaign} />
               <Action
                 onPress={() => {

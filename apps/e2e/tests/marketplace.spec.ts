@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import { test } from '../fixtures.js';
-import { invalid, valid, login, drag } from '../helpers.js';
+import { test, expect } from '../fixtures.js';
+import { invalid, valid, login } from '../helpers.js';
 import { createApplicationStore } from '../../api/src/modules/applications/store.js';
 
 test('creator and brand journeys, cache invalidation, pagination and account isolation', async ({
@@ -19,9 +19,92 @@ test('creator and brand journeys, cache invalidation, pagination and account iso
     brandPage = await brandContext.newPage();
   for (const page of [creatorPage, brandPage])
     page.on('pageerror', (error) => errors.push(error.message));
+  async function swipeDetails(dx: number, dy: number) {
+    const hint = creatorPage.getByText(
+      '← Nicht interessiert · Bewerben → · ↓ Zurück (am Seitenanfang)',
+      { exact: true }
+    );
+    await hint.click({ trial: true });
+    const box = await hint.boundingBox();
+    assert.ok(box);
+    const x = box.x + box.width / 2,
+      y = box.y + box.height / 2;
+    const session = await creatorContext.newCDPSession(creatorPage);
+    await session.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x, y }],
+    });
+    for (let step = 1; step <= 12; step++) {
+      await session.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x: x + (dx * step) / 12, y: y + (dy * step) / 12 }],
+      });
+    }
+    const surface = creatorPage.getByTestId('detail-sheet-surface');
+    await expect(creatorPage.getByRole('dialog')).toHaveCSS(
+      'background-color',
+      'rgba(0, 0, 0, 0)'
+    );
+    await expect(creatorPage.getByTestId('campaign-deck')).toBeAttached();
+    if (dx !== 0) {
+      await expect
+        .poll(async () =>
+          surface.evaluate((element) => {
+            const matrix = new DOMMatrix(getComputedStyle(element).transform);
+            return Math.sign(matrix.b);
+          })
+        )
+        .toBe(Math.sign(dx));
+    }
+    await session.send('Input.dispatchTouchEvent', {
+      type: 'touchEnd',
+      touchPoints: [],
+    });
+    await session.detach();
+    if (Math.abs(dx) < 90 && dy === 0) {
+      await expect
+        .poll(async () =>
+          surface.evaluate((element) => {
+            const matrix = new DOMMatrix(getComputedStyle(element).transform);
+            return Math.abs(matrix.b) + Math.abs(matrix.e);
+          })
+        )
+        .toBe(0);
+    }
+  }
   await login(creatorPage, creator.email, password);
   await creatorPage.waitForURL('**/CreatorFeed');
   await creatorPage.getByText('Kaffee am Morgen', { exact: true }).waitFor();
+  const nextCard = creatorPage.getByTestId('next-campaign-card');
+  await expect(nextCard).toContainText('Kaffee unterwegs');
+  await expect(nextCard).toHaveAttribute('aria-hidden', 'true');
+  const front = creatorPage.getByTestId('active-campaign-card');
+  const frontBox = await front.boundingBox();
+  assert.ok(frontBox);
+  const cardTouch = await creatorContext.newCDPSession(creatorPage);
+  const cardX = frontBox.x + frontBox.width / 2,
+    cardY = frontBox.y + 100;
+  await cardTouch.send('Input.dispatchTouchEvent', {
+    type: 'touchStart',
+    touchPoints: [{ x: cardX, y: cardY }],
+  });
+  await cardTouch.send('Input.dispatchTouchEvent', {
+    type: 'touchMove',
+    touchPoints: [{ x: cardX + 50, y: cardY }],
+  });
+  await expect
+    .poll(async () => {
+      const active = await front.boundingBox(),
+        next = await nextCard.boundingBox();
+      return Boolean(active && next && active.x > next.x + 10);
+    })
+    .toBe(true);
+  await cardTouch.send('Input.dispatchTouchEvent', {
+    type: 'touchEnd',
+    touchPoints: [],
+  });
+  await cardTouch.detach();
+
   assert.equal(await creatorPage.getByRole('tab').count(), 4);
   const navBefore = await creatorPage
     .getByRole('tablist', { name: 'Hauptnavigation' })
@@ -34,11 +117,32 @@ test('creator and brand journeys, cache invalidation, pagination and account iso
   await creatorPage
     .getByText('Online-Dauer: 30 Tage', { exact: true })
     .waitFor();
-  await creatorPage
-    .getByRole('button', { name: 'Schließen', exact: true })
-    .click();
+  await swipeDetails(45, 0);
+  await swipeDetails(-45, 0);
+  await swipeDetails(0, 140);
   await creatorPage.getByRole('dialog').waitFor({ state: 'hidden' });
-  await drag(creatorPage, 1);
+  const swipeHint = creatorPage.getByText('↑ Infos ansehen', { exact: true });
+  const swipeBox = await swipeHint.boundingBox();
+  assert.ok(swipeBox);
+  const swipeX = swipeBox.x + swipeBox.width / 2;
+  const swipeY = swipeBox.y + swipeBox.height / 2;
+  const touch = await creatorContext.newCDPSession(creatorPage);
+  await touch.send('Input.dispatchTouchEvent', {
+    type: 'touchStart',
+    touchPoints: [{ x: swipeX, y: swipeY }],
+  });
+  for (let distance = 10; distance <= 120; distance += 10) {
+    await touch.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [{ x: swipeX, y: swipeY - distance }],
+    });
+  }
+  await touch.send('Input.dispatchTouchEvent', {
+    type: 'touchEnd',
+    touchPoints: [],
+  });
+  await touch.detach();
+  await swipeDetails(140, 0);
   await creatorPage
     .getByRole('textbox', { name: 'Dein Pitch (optional)', exact: true })
     .fill('Ich liebe Kaffee und erzähle eure Geschichte.');
@@ -73,9 +177,18 @@ test('creator and brand journeys, cache invalidation, pagination and account iso
     .getByRole('button', { name: 'Bewerbung senden', exact: true })
     .click();
   await creatorPage.getByRole('dialog').waitFor({ state: 'hidden' });
-  await creatorPage.getByText('Kaffee unterwegs', { exact: true }).waitFor();
-  await drag(creatorPage, -1);
-  await creatorPage.getByText('Für später', { exact: true }).waitFor();
+  await creatorPage
+    .getByTestId('active-campaign-card')
+    .getByText('Kaffee unterwegs', { exact: true })
+    .waitFor();
+  await creatorPage
+    .getByRole('button', { name: 'Kampagnendetails', exact: true })
+    .click();
+  await swipeDetails(-140, 0);
+  await creatorPage
+    .getByTestId('active-campaign-card')
+    .getByText('Für später', { exact: true })
+    .waitFor();
   await creatorPage
     .getByRole('button', { name: 'Bewerben', exact: true })
     .click();

@@ -35,8 +35,23 @@ export function Page({
   branded?: boolean;
   footer?: ReactNode;
   scrollRef?: Ref<ScrollView>;
-  scrollProps?: Pick<ScrollViewProps, 'onScroll' | 'onContentSizeChange'>;
+  scrollProps?: Pick<
+    ScrollViewProps,
+    | 'onScroll'
+    | 'onContentSizeChange'
+    | 'onTouchStart'
+    | 'onTouchMove'
+    | 'onTouchEnd'
+    | 'onTouchCancel'
+  >;
 }) {
+  const {
+    onTouchStart,
+    onTouchMove,
+    onTouchEnd,
+    onTouchCancel,
+    ...scrollOptions
+  } = scrollProps ?? {};
   return (
     <SafeAreaView
       style={ui.safe}
@@ -67,12 +82,16 @@ export function Page({
         <View style={styles.headerAction}>{headerAction}</View>
       </View>
       <KeyboardAvoidingView
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        onTouchCancel={onTouchCancel}
         style={ui.fill}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
           ref={scrollRef}
-          {...scrollProps}
+          {...scrollOptions}
           scrollEventThrottle={16}
           keyboardShouldPersistTaps="handled"
           contentInsetAdjustmentBehavior="never"

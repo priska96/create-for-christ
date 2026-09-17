@@ -1,67 +1,101 @@
-import { useMemo, useState } from 'react';
-import { Animated, PanResponder, Text, type ViewProps } from 'react-native';
+import { useMemo, useState, type ReactNode } from 'react';
+import {
+  Animated,
+  PanResponder,
+  Text,
+  View,
+  StyleSheet,
+  type ViewProps,
+} from 'react-native';
+import { colors } from '../../ui/theme';
 import { ui } from '../../ui';
-import { SWIPE } from './constants';
+import { createSwipeHandlers } from './swipeHandlers';
+import { swipeTransform, resetSwipe } from './swipeAnimation';
 import { styles } from './styles';
 export function SwipeCard({
   children,
+  underlay,
   disabled,
   onInterested,
   onDismiss,
+  onDetails,
 }: ViewProps & {
+  underlay?: ReactNode;
   disabled: boolean;
   onInterested: () => void;
   onDismiss: () => void;
+  onDetails: () => void;
 }) {
-  const [offset] = useState(() => new Animated.Value(0));
-  const responder = useMemo(() => {
-    const reset = () =>
-      Animated.timing(offset, {
-        toValue: 0,
-        duration: SWIPE.resetDurationMs,
-        useNativeDriver: true,
-      }).start();
-    return PanResponder.create({
-      onMoveShouldSetPanResponder: (_, gesture) =>
-        !disabled &&
-        Math.abs(gesture.dx) > SWIPE.startDistance &&
-        Math.abs(gesture.dx) > Math.abs(gesture.dy) * SWIPE.horizontalRatio,
-      onPanResponderMove: (_, gesture) => {
-        if (!disabled) offset.setValue(gesture.dx);
-      },
-      onPanResponderRelease: (_, gesture) => {
-        reset();
-        if (disabled) return;
-        if (gesture.dx >= SWIPE.threshold) onInterested();
-        else if (gesture.dx <= -SWIPE.threshold) onDismiss();
-      },
-      onPanResponderTerminate: reset,
-    });
-  }, [disabled, offset, onInterested, onDismiss]);
+  const [hintHeight, setHintHeight] = useState(0);
+  const [offset] = useState(() => new Animated.ValueXY());
+  const responder = useMemo(
+    () => createResponder(offset, disabled, onInterested, onDismiss, onDetails),
+    [disabled, offset, onInterested, onDismiss, onDetails]
+  );
   return (
-    <Animated.View
-      {...responder.panHandlers}
-      style={[
-        styles.swipeSurface,
-        {
-          transform: [
-            { translateX: offset },
-            {
-              rotate: offset.interpolate({
-                inputRange: [-SWIPE.threshold, SWIPE.threshold],
-                outputRange: [
-                  `-${SWIPE.rotationDegrees}deg`,
-                  `${SWIPE.rotationDegrees}deg`,
-                ],
-                extrapolate: 'clamp',
-              }),
-            },
-          ],
-        },
-      ]}
-    >
-      <Text style={ui.body}>← Nicht interessiert · Bewerben →</Text>
-      {children}
-    </Animated.View>
+    <View style={deckStyles.deck} testID="campaign-deck">
+      {underlay && (
+        <View
+          testID="next-campaign-card"
+          pointerEvents="none"
+          aria-hidden
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={[deckStyles.underlay, { top: hintHeight }]}
+        >
+          {underlay}
+        </View>
+      )}
+      <Animated.View
+        testID="active-campaign-card"
+        {...responder.panHandlers}
+        style={[
+          styles.swipeSurface,
+          deckStyles.front,
+          {
+            transform: swipeTransform(offset),
+          },
+        ]}
+      >
+        <View
+          onLayout={(event) => setHintHeight(event.nativeEvent.layout.height)}
+        >
+          <Text style={ui.body}>← Nicht interessiert · Bewerben →</Text>
+          <Text style={ui.body}>↑ Infos ansehen</Text>
+        </View>
+        {children}
+      </Animated.View>
+    </View>
   );
 }
+
+function createResponder(
+  offset: Animated.ValueXY,
+  disabled: boolean,
+  onInterested: () => void,
+  onDismiss: () => void,
+  onDetails: () => void
+) {
+  return PanResponder.create(
+    createSwipeHandlers({
+      disabled,
+      move: (position) => offset.setValue(position),
+      reset: () => resetSwipe(offset),
+      onInterested,
+      onDismiss,
+      onDetails,
+    })
+  );
+}
+
+const deckStyles = StyleSheet.create({
+  deck: { position: 'relative' },
+  underlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    overflow: 'hidden',
+  },
+  front: { backgroundColor: colors.background },
+});

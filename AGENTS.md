@@ -20,3 +20,5 @@
 - Keep file names in camelCase.
 - Keep file names with capital first letter for component files.
 - Custom Hooks should be in the hooks directory.
+
+- User requirement: Every implementation must include appropriate automated tests. For native gestures, mouse-only browser tests are insufficient; cover touch handling and responder ownership.
